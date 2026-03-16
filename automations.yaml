@@ -1,0 +1,3354 @@
+- id: '1708462885755'
+  alias: FBHZcontrol
+  description: ''
+  triggers:
+  - entity_id:
+    - sensor.fbhzcontrol_mode
+    trigger: state
+  - trigger: time_pattern
+    hours: '1'
+    minutes: '0'
+    seconds: '0'
+  conditions: []
+  actions:
+  - alias: Betriebsart Urlaub
+    if:
+    - condition: numeric_state
+      entity_id: sensor.sv_hkr2_betriebsart
+      above: 6.5
+      below: 7.5
+    then:
+    - data:
+        hub: Solvis
+        unit: 1
+        address: 3078
+        value: 22
+      action: modbus.write_register
+    - data:
+        hub: Solvis
+        unit: 1
+        address: 3082
+        value: 120
+      action: modbus.write_register
+    else:
+    - if:
+      - condition: state
+        entity_id: sensor.fbhzcontrol_mode
+        state: turbo
+      then:
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3078
+          value: 22
+        action: modbus.write_register
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3082
+          value: 120
+        action: modbus.write_register
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3074
+          value: 2
+        action: modbus.write_register
+      alias: if turbo
+    - if:
+      - condition: state
+        entity_id: sensor.fbhzcontrol_mode
+        state: high
+      then:
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3078
+          value: 21
+        action: modbus.write_register
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3082
+          value: 80
+        action: modbus.write_register
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3074
+          value: 2
+        action: modbus.write_register
+      alias: if high
+    - if:
+      - condition: state
+        entity_id: sensor.fbhzcontrol_mode
+        state: low
+      then:
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3078
+          value: 19
+        action: modbus.write_register
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3082
+          value: 60
+        action: modbus.write_register
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3074
+          value: 2
+        action: modbus.write_register
+      alias: if low
+    - if:
+      - condition: state
+        entity_id: sensor.fbhzcontrol_mode
+        state: 'off'
+      then:
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 3074
+          value: 5
+        action: modbus.write_register
+      alias: if off
+  - data:
+      topic: FBHZcontrol/mode "{{ states('sensor.fbhzcontrol_mode') }}"
+    action: mqtt.publish
+  mode: single
+- id: '1708544782588'
+  alias: Lightcontrol Livingroom
+  description: Lightmode abhängige Regelung von Lightstate
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.bewegungsmelder_wohnzimmer_bewegungsmelder_wohnzimmer_occupancy
+    from:
+    to: 'on'
+  - platform: state
+    entity_id:
+    - input_select.lightmode_livingroom
+    to: auto
+    id: to_auto
+  - platform: state
+    entity_id:
+    - input_select.lightmode_livingroom
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_livingroom
+        state: 'on'
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.lightstate_livingroom
+        data:
+          option: 'on'
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_livingroom
+        state: low
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.lightstate_livingroom
+        data:
+          option: low
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_livingroom
+        state: 'off'
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.lightstate_livingroom
+        data:
+          option: 'off'
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_livingroom
+        state: auto
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: binary_sensor.bewegungsmelder_wohnzimmer_bewegungsmelder_wohnzimmer_occupancy
+          state: 'on'
+          enabled: true
+        - condition: state
+          entity_id: binary_sensor.bewegungsmelder_wohnzimmer_bewegungsmelder_wohnzimmer_occupancy
+          state: 'on'
+          enabled: true
+      sequence:
+      - if:
+        - condition: numeric_state
+          entity_id: sensor.motion_livingroom_motion_livingroom_illuminance_lux
+          below: 20
+        then:
+        - if: []
+          then:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.lightstate_livingroom
+            data:
+              option: 'on'
+          - delay:
+              hours: 0
+              minutes: 5
+              seconds: 0
+              milliseconds: 0
+        - if: []
+          then:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.lightstate_livingroom
+            data:
+              option: low
+          - delay:
+              hours: 0
+              minutes: 10
+              seconds: 0
+              milliseconds: 0
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.lightstate_livingroom
+        data:
+          option: 'off'
+    - conditions:
+      - condition: trigger
+        id:
+        - to_auto
+      sequence:
+      - service: input_select.select_option
+        metadata: {}
+        data:
+          option: 'off'
+        target:
+          entity_id: input_select.lightstate_livingroom
+  mode: restart
+- id: '1708551297289'
+  alias: Lightexecuter Livingroom
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_livingroom
+  - platform: time_pattern
+    hours: /1
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: 'on'
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness: 255
+        target:
+          entity_id:
+          - light.wz_lowlight1
+          - light.wz_lowlight2
+      - service: light.turn_on
+        metadata: {}
+        data:
+          hs_color:
+          - 10
+          - 100
+          brightness: 70
+        target:
+          entity_id: light.light_rgbw_livingroom_window
+      - service: light.turn_on
+        metadata: {}
+        data:
+          hs_color:
+          - 28
+          - 100
+          brightness: 255
+        target:
+          entity_id:
+          - light.tasmota_led205_tasmota
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 80
+        target:
+          entity_id: light.tasmota_led200_tasmota_led200_klavier
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 100
+        target:
+          entity_id: light.mqtt_couchleuchte_tasmota
+      - service: light.turn_on
+        metadata: {}
+        data:
+          hs_color:
+          - 29
+          - 100
+          brightness: 170
+        target:
+          entity_id: light.tasmota_led206_tasmota
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: low
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness: 100
+          transition: 3
+        target:
+          entity_id:
+          - light.wz_lowlight1
+          - light.wz_lowlight2
+      - service: light.turn_on
+        metadata: {}
+        data:
+          hs_color:
+          - 10
+          - 100
+          brightness: 30
+        target:
+          entity_id: light.light_rgbw_livingroom_window
+      - service: light.turn_on
+        metadata: {}
+        data:
+          hs_color:
+          - 10
+          - 100
+          brightness: 100
+        target:
+          entity_id:
+          - light.tasmota_led205_tasmota
+          - light.tasmota_led206_tasmota
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 40
+        target:
+          entity_id:
+          - light.tasmota_led200_tasmota_led200_klavier
+          - light.mqtt_couchleuchte_tasmota
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: 'off'
+      sequence:
+      - service: light.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - light.wz_lowlight1
+          - light.wz_lowlight2
+      - service: light.turn_on
+        metadata: {}
+        data:
+          hs_color:
+          - 10
+          - 100
+          transition: 10
+          brightness: 0
+        target:
+          entity_id: light.light_rgbw_livingroom_window
+      - service: light.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - light.tasmota_led200_tasmota_led200_klavier
+          - light.mqtt_couchleuchte_tasmota
+          - light.tasmota_led205_tasmota
+          - light.tasmota_led206_tasmota
+  mode: restart
+- id: '1708977553675'
+  alias: Lightcontrol_Vorlage
+  description: Lightmode abhängige Regelung von Lightstate
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.bewegungsmelder_wohnzimmer_bewegungsmelder_wohnzimmer_occupancy
+    from:
+    to: 'on'
+  - platform: state
+    entity_id:
+    - input_select.lightmode_livingroom
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_livingroom
+        state: 'on'
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.lightstate_livingroom
+        data:
+          option: 'on'
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_livingroom
+        state: low
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.lightstate_livingroom
+        data:
+          option: low
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_livingroom
+        state: 'off'
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.lightstate_livingroom
+        data:
+          option: 'off'
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_livingroom
+        state: auto
+      - condition: state
+        entity_id: binary_sensor.0x0017880104b4baa8_0x0017880104b4baa8_occupancy
+        state: 'on'
+        enabled: true
+      sequence:
+      - if: []
+        then:
+        - service: input_select.select_option
+          target:
+            entity_id: input_select.lightstate_livingroom
+          data:
+            option: 'on'
+        - delay:
+            hours: 0
+            minutes: 5
+            seconds: 0
+            milliseconds: 0
+      - if: []
+        then:
+        - service: input_select.select_option
+          target:
+            entity_id: input_select.lightstate_livingroom
+          data:
+            option: low
+        - delay:
+            hours: 0
+            minutes: 10
+            seconds: 0
+            milliseconds: 0
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.lightstate_livingroom
+        data:
+          option: 'off'
+  mode: restart
+- id: '1708977593990'
+  alias: Lightexecuter_Vorlage
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_livingroom
+  - platform: time_pattern
+    hours: /1
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: 'on'
+      sequence: []
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: low
+      sequence: []
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: 'off'
+      sequence: []
+  mode: restart
+- id: '1708979248425'
+  alias: Lightcontrol_Livingroom_TVdim
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.none_tasmota_sd108_energy_power
+    - input_select.lightmode_livingroom
+  condition:
+  - condition: state
+    entity_id: input_select.lightmode_livingroom
+    state: on_tvdim
+  action:
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.none_tasmota_sd108_energy_power
+        above: 40
+      sequence:
+      - service: input_select.select_option
+        metadata: {}
+        data:
+          option: low
+        target:
+          entity_id: input_select.lightstate_livingroom
+    default:
+    - service: input_select.select_option
+      metadata: {}
+      data:
+        option: 'on'
+      target:
+        entity_id: input_select.lightstate_livingroom
+  mode: single
+- id: '1708979422810'
+  alias: Timer_Sunset
+  description: Timer zum Sonnenuntergang
+  trigger:
+  - platform: sun
+    event: sunset
+    offset: -00:45:00
+  condition: []
+  action:
+  - service: scene.turn_on
+    metadata: {}
+    target:
+      entity_id: scene.night_lights
+  mode: single
+- id: '1708979527194'
+  alias: Timer_Nighttime
+  description: ''
+  trigger:
+  - platform: time
+    at: '23:30:00'
+  - platform: time
+    at: 01:00:00
+  condition: []
+  action:
+  - service: input_select.select_option
+    metadata: {}
+    data:
+      option: auto
+    target:
+      entity_id: input_select.lightmode_livingroom
+  - service: scene.turn_on
+    metadata: {}
+    target:
+      entity_id: scene.lights_goodnight_off
+  mode: single
+- id: '1708984956547'
+  alias: Lightcontrol2_Livingroom
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.motion_livingroom_occupancy
+      motion_sensor_2: binary_sensor.motion_dummy
+      lightmode_helper: input_select.lightmode_livingroom
+      lightstate_helper: input_select.lightstate_livingroom
+      wait_time_on: 600
+      wait_time_low: 300
+      illuminance_sensor: sensor.wohnzimmer_presence_light_sensor_light_level
+      motion_sensor_3: binary_sensor.motion_dummy
+      motion_sensor_4: binary_sensor.motion_dummy
+      illuminance_limit: 8
+- id: '1709064402792'
+  alias: SOC_copy
+  description: Kopiert SOC in Zwischenwert
+  trigger:
+  - platform: numeric_state
+    entity_id:
+    - sensor.battbms_soc
+    below: 101
+  condition: []
+  action:
+  - service: input_number.set_value
+    metadata: {}
+    data:
+      value: '{{states(''sensor.battbms_soc'').state}}'
+    target:
+      entity_id: input_number.batt_bms_mem
+  mode: single
+- id: '1709152091839'
+  alias: Lightcontrol Esszimmer
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.motion_esszimmer_occupancy
+      motion_sensor_2: binary_sensor.motion_dummy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_esszimmer
+      lightstate_helper: input_select.lightstate_esszimmer
+      wait_time_on: 600
+      wait_time_low: 3600
+      illuminance_limit: 2500
+      motion_sensor_3: binary_sensor.motion_dummy
+      motion_sensor_4: binary_sensor.motion_dummy
+- id: '1709152846836'
+  alias: Lightexecuter Esszimmer
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_esszimmer
+  - platform: time_pattern
+    hours: /1
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_esszimmer
+        state: 'on'
+      sequence:
+      - service: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.tasmota_sd100
+      - service: light.turn_on
+        metadata: {}
+        data:
+          profile: High
+        target:
+          entity_id: light.wled_esszimmer
+      - choose:
+        - conditions:
+          - condition: numeric_state
+            entity_id: sensor.motion_livingroom_illuminance_lux
+            above: 10
+          sequence:
+          - service: light.turn_on
+            metadata: {}
+            data:
+              brightness_pct: 100
+              color_temp: 153
+            target:
+              entity_id: light.tasmota_led204_led_esszimmer
+          - service: select.select_option
+            target:
+              entity_id: select.wled_esszimmer_preset
+            data:
+              option: Bright
+        default:
+        - service: light.turn_on
+          metadata: {}
+          data:
+            brightness_pct: 70
+            color_temp: 153
+          target:
+            entity_id: light.tasmota_led204_led_esszimmer
+        - service: select.select_option
+          target:
+            entity_id: select.wled_esszimmer_preset
+          data:
+            option: High
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_esszimmer
+        state: low
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 30
+          color_temp: 153
+        target:
+          entity_id: light.tasmota_led204_led_esszimmer
+      - service: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.none_tasmota2
+      - service: light.turn_on
+        metadata: {}
+        data:
+          profile: Low
+        target:
+          entity_id: light.wled_esszimmer
+      - service: select.select_option
+        target:
+          entity_id: select.wled_esszimmer_preset
+        data:
+          option: Low
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_esszimmer
+        state: 'off'
+      sequence:
+      - service: light.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: light.tasmota_led204_led_esszimmer
+      - service: switch.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.tasmota_sd100
+      - service: select.select_option
+        target:
+          entity_id: select.wled_esszimmer_preset
+        data:
+          option: 'Off'
+  mode: restart
+- id: '1709238058661'
+  alias: Lightexecuter Gartenhinten
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_gartenhinten
+  - platform: time_pattern
+    hours: /1
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenhinten
+        state: 'on'
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 100
+        target:
+          entity_id: light.gartenlichterhinten
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenhinten
+        state: low
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 50
+        target:
+          entity_id: light.gartenlichterhinten
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenhinten
+        state: 'off'
+      sequence:
+      - service: light.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: light.gartenlichterhinten
+  mode: restart
+- id: '1709238353922'
+  alias: Lightcontrol Gartenhinten
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.bewegungsmelder_gartenhaus_occupancy
+      motion_sensor_2: binary_sensor.motion_terrasse_occupancy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_gartenhinten
+      lightstate_helper: input_select.lightstate_gartenhinten
+      wait_time_low: 60
+      illuminance_limit: 2500
+      motion_sensor_4: binary_sensor.motion_esszimmer_occupancy
+      motion_sensor_3: binary_sensor.bewegungsmelder_gartentor_occupancy
+      wait_time_on: 120
+- id: '1709242893615'
+  alias: Lightexecuter_Gartenhaus
+  description: ''
+  triggers:
+  - entity_id:
+    - input_select.lightstate_gartenhaus
+    trigger: state
+  - hours: /1
+    trigger: time_pattern
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenhaus
+        state: 'on'
+      sequence:
+      - metadata: {}
+        data:
+          brightness: 255
+        target:
+          entity_id:
+          - light.gartenhausrechts_licht
+          - light.0x84182600000f892b
+        action: light.turn_on
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenhaus
+        state: low
+      sequence:
+      - metadata: {}
+        data:
+          brightness: 100
+        target:
+          entity_id:
+          - light.gartenhausrechts_licht
+          - light.0x84182600000f892b
+        action: light.turn_on
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenhaus
+        state: 'off'
+      sequence:
+      - metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - light.gartenhausrechts_licht
+          - light.0x84182600000f892b
+        action: light.turn_off
+  mode: restart
+- id: '1709243230836'
+  alias: Lightexecuter Kellertreppe
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_kellertreppe
+  - platform: time_pattern
+    hours: /1
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_kellertreppe
+        state: 'on'
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness: 255
+        target:
+          entity_id:
+          - light.kellertreppe_licht
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_kellertreppe
+        state: low
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness: 100
+        target:
+          entity_id:
+          - light.kellertreppe_licht
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_kellertreppe
+        state: 'off'
+      sequence:
+      - service: light.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - light.kellertreppe_licht
+  mode: restart
+- id: '1709243306668'
+  alias: Lightcontrol Kellertreppe
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.bewegungsmelder_kellertreppe_occupancy
+      motion_sensor_2: binary_sensor.bewegungsmelder_gartenhaus_occupancy
+      motion_sensor_3: binary_sensor.motion_dummy
+      motion_sensor_4: binary_sensor.motion_dummy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_kellertreppe
+      lightstate_helper: input_select.lightstate_kellertreppe
+      illuminance_limit: 2500
+- id: '1709243418738'
+  alias: Lightcontrol Gartenhaus
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.bewegungsmelder_kellertreppe_occupancy
+      motion_sensor_2: binary_sensor.bewegungsmelder_gartenhaus_occupancy
+      motion_sensor_3: binary_sensor.motion_terrasse_occupancy
+      motion_sensor_4: binary_sensor.bewegungsmelder_gartentor_occupancy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_gartenhaus
+      lightstate_helper: input_select.lightstate_gartenhaus
+      illuminance_limit: 2500
+- id: '1709498634770'
+  alias: Lightcontrol Gartenvorn
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.bewegungsmelder_gartenhaus_occupancy
+      motion_sensor_2: binary_sensor.motion_terrasse_occupancy
+      motion_sensor_3: binary_sensor.motion_dummy
+      motion_sensor_4: binary_sensor.motion_esszimmer_occupancy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_gartenvorn
+      lightstate_helper: input_select.lightstate_gartenvorn
+      illuminance_limit: 2500
+- id: '1709498913537'
+  alias: Lightexecution_Gartenvorn
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_gartenvorn
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenvorn
+        state: 'on'
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 100
+          color_temp: 153
+        target:
+          entity_id: light.gartenhausseite
+      - service: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.switch_poolswitches_ch3
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenvorn
+        state: low
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 50
+          color_temp: 153
+        target:
+          entity_id: light.gartenhausseite
+      - service: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.switch_poolswitches_ch3
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenvorn
+        state: 'off'
+      sequence:
+      - service: light.turn_off
+        target:
+          entity_id:
+          - light.gartenhausseite
+        data: {}
+      - service: switch.turn_off
+        target:
+          entity_id:
+          - switch.switch_poolswitches_ch3
+        data: {}
+  mode: restart
+- id: '1709501054131'
+  alias: Lightcontrol Terrasse
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.motion_terrasse_occupancy
+      motion_sensor_2: binary_sensor.motion_dummy
+      motion_sensor_3: binary_sensor.motion_dummy
+      motion_sensor_4: binary_sensor.motion_dummy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_terrasse
+      lightstate_helper: input_select.lightstate_terrasse
+      illuminance_limit: 40
+- id: '1709501247254'
+  alias: Lightexecuter Terrasse
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_terrasse
+  - platform: time_pattern
+    hours: /1
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_terrasse
+        state: 'on'
+      sequence:
+      - service: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.switch_terrasse_lights_ch1
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_terrasse
+        state: low
+      sequence:
+      - service: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.switch_terrasse_lights_ch1
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_terrasse
+        state: 'off'
+      sequence:
+      - service: switch.turn_off
+        target:
+          entity_id:
+          - switch.switch_terrasse_lights_ch1
+        data: {}
+  mode: restart
+- id: '1709501734701'
+  alias: Lightcontrol Treppeoben
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.motion_fluroben_occupancy
+      motion_sensor_2: binary_sensor.motion_treppeoben_occupancy
+      motion_sensor_3: binary_sensor.motion_dummy
+      motion_sensor_4: binary_sensor.motion_dummy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_treppeoben
+      lightstate_helper: input_select.lightstate_treppeoben
+      illuminance_limit: 2500
+- id: '1709502170210'
+  alias: Lightexecuter_Treppeoben
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_treppeoben
+  - platform: time_pattern
+    minutes: /10
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_treppeoben
+        state: 'on'
+      sequence:
+      - if:
+        - condition: time
+          after: '19:30:00'
+          before: 06:00:00
+        then:
+        - service: light.turn_on
+          metadata: {}
+          data:
+            rgbw_color:
+            - 64
+            - 10
+            - 0
+            - 0
+            brightness_pct: 10
+          target:
+            entity_id:
+            - light.tasmota_led202_tasmota
+        - service: light.turn_on
+          metadata: {}
+          data:
+            brightness_pct: 30
+            rgbw_color:
+            - 64
+            - 20
+            - 0
+            - 0
+          target:
+            entity_id:
+            - light.tasmota_led203_tasmota_led203_fluroben_down
+        else:
+        - service: light.turn_on
+          metadata: {}
+          data:
+            color_temp: 153
+            brightness_pct: 50
+          target:
+            entity_id:
+            - light.tasmota_led203_tasmota_led203_fluroben_down
+            - light.tasmota_led202_tasmota
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_treppeoben
+        state: low
+      sequence:
+      - if:
+        - condition: time
+          after: '19:30:00'
+          before: 06:00:00
+        then:
+        - service: light.turn_on
+          metadata: {}
+          data:
+            rgbw_color:
+            - 64
+            - 10
+            - 0
+            - 0
+            brightness_pct: 10
+          target:
+            entity_id:
+            - light.tasmota_led202_tasmota
+        - service: light.turn_on
+          metadata: {}
+          data:
+            brightness_pct: 15
+            rgbw_color:
+            - 64
+            - 10
+            - 0
+            - 0
+          target:
+            entity_id:
+            - light.tasmota_led203_tasmota_led203_fluroben_down
+        else:
+        - service: light.turn_on
+          metadata: {}
+          data:
+            color_temp: 153
+            brightness_pct: 20
+          target:
+            entity_id:
+            - light.tasmota_led202_tasmota
+            - light.tasmota_led203_tasmota_led203_fluroben_down
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_treppeoben
+        state: 'off'
+      sequence:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          color_temp: 153
+          brightness_pct: 0
+        target:
+          entity_id:
+          - light.tasmota_led202_tasmota
+          - light.tasmota_led203_tasmota_led203_fluroben_down
+  mode: restart
+- id: '1709589686566'
+  alias: Batt Discharge Mode Executer
+  description: ''
+  triggers:
+  - entity_id:
+    - sensor.batt_discharge_mode
+    trigger: state
+  - minutes: /1
+    trigger: time_pattern
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: sensor.batt_discharge_mode
+        state: 'off'
+      sequence:
+      - action: button.press
+        metadata: {}
+        data: {}
+        target:
+          entity_id: button.hms_2000_4t_turn_inverter_off
+      - metadata: {}
+        data:
+          retain: true
+          topic: Soyosource/SOYO_ff1623/NotAus
+          payload: '1'
+        action: mqtt.publish
+      - data: {}
+        action: rest_command.soyo_notaus
+    - conditions:
+      - condition: state
+        entity_id: sensor.batt_discharge_mode
+        state: 'on'
+      sequence:
+      - action: button.press
+        metadata: {}
+        data: {}
+        target:
+          entity_id: button.hms_2000_4t_turn_inverter_on
+      - metadata: {}
+        data:
+          retain: true
+          topic: Soyosource/SOYO_ff1623/NotAus
+          payload: '0'
+        action: mqtt.publish
+      - data: {}
+        action: rest_command.soyo_notausaus
+  mode: single
+- id: '1709844826982'
+  alias: Lightcontrol Küche
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.presence_kueche_presence
+      motion_sensor_2: binary_sensor.motion_dummy
+      motion_sensor_3: binary_sensor.motion_dummy
+      motion_sensor_4: binary_sensor.motion_dummy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_kuche
+      lightstate_helper: input_select.lightstate_kuche
+      wait_time_on: 30
+      illuminance_limit: 2500
+- id: '1709963544634'
+  alias: LightcontrolPresence Vorlage
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.presence_kueche_presence
+    from:
+    to: 'on'
+    id: presence_on
+  - platform: state
+    entity_id:
+    - binary_sensor.presence_kueche_presence
+    from:
+    to: 'off'
+    id: presence_off
+  - platform: state
+    entity_id:
+    - input_select.lightmode_kuche
+  - platform: numeric_state
+    entity_id:
+    - sensor.presence_kueche_illuminance
+    above: 500
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_kuche
+        state: 'on'
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id:
+          - input_select.lightstate_kuche
+        data:
+          option: 'on'
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_kuche
+        state: low
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id:
+          - input_select.lightstate_kuche
+        data:
+          option: low
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_kuche
+        state: 'off'
+      sequence:
+      - service: input_select.select_option
+        target:
+          entity_id:
+          - input_select.lightstate_kuche
+        data:
+          option: 'off'
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightmode_kuche
+        state: auto
+      sequence:
+      - choose:
+        - conditions:
+          - condition: numeric_state
+            entity_id: sensor.presence_kueche_illuminance
+            above: 500
+          sequence:
+          - service: input_select.select_option
+            metadata: {}
+            data:
+              option: 'off'
+            target:
+              entity_id: input_select.lightstate_kuche
+            alias: Lightstate OFF
+          alias: Taghell
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.presence_kueche_presence
+            state: 'on'
+          - condition: numeric_state
+            entity_id: sensor.presence_kueche_illuminance
+            below: 250
+          sequence:
+          - service: input_select.select_option
+            metadata: {}
+            data:
+              option: 'on'
+            target:
+              entity_id: input_select.lightstate_kuche
+            alias: Lightstate ON
+            enabled: true
+          alias: Dunkel und Anwesend
+        - conditions:
+          - condition: trigger
+            id:
+            - presence_off
+          - condition: numeric_state
+            entity_id: sensor.presence_kueche_illuminance
+            below: 250
+          sequence:
+          - alias: Lightstate LOW
+            service: input_select.select_option
+            metadata: {}
+            data:
+              option: low
+            target:
+              entity_id: input_select.lightstate_kuche
+          - delay:
+              hours: 0
+              minutes: 0
+              seconds: 30
+              milliseconds: 0
+          - alias: Lightstate OFF
+            service: input_select.select_option
+            metadata: {}
+            data:
+              option: 'off'
+            target:
+              entity_id: input_select.lightstate_kuche
+          alias: Dunkel und Abwesend
+        default:
+        - alias: Lightstate OFF
+          service: input_select.select_option
+          metadata: {}
+          data:
+            option: 'off'
+          target:
+            entity_id: input_select.lightstate_kuche
+  mode: restart
+- id: '1709968358086'
+  alias: LightcontrolPresence Küche
+  description: ''
+  use_blueprint:
+    path: myBlueprints/LightcontrolPresence_Blueprint.yaml
+    input:
+      presence_sensor_1: binary_sensor.presence_kueche_presence
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_kuche
+      lightstate_helper: input_select.lightstate_kuche
+      wait_time_low: 900
+      illuminance_limit_on: 2500
+      illuminance_limit_off: 3000
+- id: '1710055822032'
+  alias: Lightexecutor Küche
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_select.lightstate_kuche
+  - platform: time_pattern
+    hours: /1
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_kuche
+        state: 'on'
+      sequence:
+      - choose:
+        - conditions:
+          - condition: time
+            after: '20:00:00'
+            before: 06:00:00
+          sequence:
+          - alias: Dimm 130
+            service: light.turn_on
+            metadata: {}
+            data:
+              color_temp: 153
+              brightness: 130
+            target:
+              entity_id:
+              - light.tasmota_led201_tasmota_led201_kueche
+        default:
+        - alias: Dimm 255
+          service: light.turn_on
+          metadata: {}
+          data:
+            color_temp: 153
+            brightness: 255
+          target:
+            entity_id:
+            - light.tasmota_led201_tasmota_led201_kueche
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_kuche
+        state: low
+      sequence:
+      - choose:
+        - conditions:
+          - condition: time
+            after: '20:00:00'
+            before: 06:00:00
+          sequence:
+          - alias: Dimm 50
+            service: light.turn_on
+            metadata: {}
+            data:
+              color_temp: 153
+              brightness: 50
+            target:
+              entity_id: light.tasmota_led201_tasmota_led201_kueche
+        default:
+        - service: light.turn_on
+          metadata: {}
+          data:
+            color_temp: 153
+            brightness: 100
+          target:
+            entity_id: light.tasmota_led201_tasmota_led201_kueche
+          alias: Dimm 100
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_kuche
+        state: 'off'
+      sequence:
+      - service: light.turn_off
+        metadata: {}
+        data:
+          transition: 8
+        target:
+          entity_id: light.tasmota_led201_tasmota_led201_kueche
+  mode: restart
+- id: '1710276108667'
+  alias: Abfallerinnerungen
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.altpapier
+    to: '1'
+    for:
+      hours: 20
+      minutes: 0
+      seconds: 0
+    id: Altpapier
+  - platform: state
+    entity_id:
+    - sensor.restabfall
+    to: '1'
+    for:
+      hours: 20
+      minutes: 0
+      seconds: 0
+    id: Restabfall
+  - platform: state
+    entity_id:
+    - sensor.biomuell
+    to: '1'
+    for:
+      hours: 20
+      minutes: 0
+      seconds: 0
+    id: Biomüll
+  - platform: state
+    entity_id:
+    - sensor.gelbersack
+    to: '1'
+    for:
+      hours: 20
+      minutes: 0
+      seconds: 0
+    id: Gelbersack
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Altpapier
+      sequence:
+      - service: notify.pushover
+        metadata: {}
+        data:
+          title: Müllkalender
+          message: Morgen ist ALTPAPIER
+      - service: tts.speak
+        metadata: {}
+        data:
+          cache: true
+          media_player_entity_id: media_player.wohnzimmer
+          message: Morgen ist Altpapier
+        target:
+          entity_id: tts.google_en_com
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Restabfall
+      sequence:
+      - service: notify.pushover
+        metadata: {}
+        data:
+          title: Müllkalender
+          message: Morgen ist RESTMÜLL
+      - service: tts.speak
+        metadata: {}
+        data:
+          cache: true
+          media_player_entity_id: media_player.wohnzimmer
+          message: Morgen ist Restmüll
+        target:
+          entity_id: tts.google_en_com
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Biomüll
+      sequence:
+      - service: notify.pushover
+        metadata: {}
+        data:
+          title: Müllkalender
+          message: Morgen ist BIOMÜLL
+      - service: tts.speak
+        metadata: {}
+        data:
+          cache: true
+          media_player_entity_id: media_player.wohnzimmer
+          message: Morgen ist Biomüll
+        target:
+          entity_id: tts.google_en_com
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Gelbersack
+      sequence:
+      - service: notify.pushover
+        metadata: {}
+        data:
+          title: Müllkalender
+          message: Morgen ist GELBER SACK
+      - service: tts.speak
+        metadata: {}
+        data:
+          cache: true
+          media_player_entity_id: media_player.wohnzimmer
+          message: Morgen ist Gelber Sack
+        target:
+          entity_id: tts.google_en_com
+  mode: single
+- id: '1711119199097'
+  alias: Timer_Sunrise
+  description: Ausschalten der Nachtlichter
+  trigger:
+  - platform: sun
+    event: sunrise
+    offset: 0
+  condition: []
+  action:
+  - service: scene.turn_on
+    metadata: {}
+    target:
+      entity_id: scene.lights_off
+  mode: single
+- id: '1711834920072'
+  alias: Daylogs Trigger
+  description: ''
+  triggers:
+  - at: '23:58:50'
+    trigger: time
+  conditions: []
+  actions:
+  - metadata: {}
+    data: {}
+    action: script.daylogs
+  mode: single
+- id: '1712519488225'
+  alias: AutoBackup
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - schedule.backupzeit
+    to: 'on'
+  condition: []
+  action:
+  - service: hassio.backup_full
+    data:
+      compressed: true
+      homeassistant_exclude_database: false
+      location: Backup
+  mode: single
+- id: '1712691194990'
+  alias: Ofenpool nachlegen
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id:
+    - sensor.ofenpool_gradient
+    below: -20
+  condition:
+  - condition: state
+    entity_id: switch.poolcontrol_automatik_holzheizung
+    state: 'on'
+  action:
+  - service: notify.pushover
+    metadata: {}
+    data:
+      message: Ofen kühlt ab mit -20°C/h
+      title: Poolofen
+  mode: single
+- id: '1715543840831'
+  alias: Switch_Sunrise
+  description: ''
+  triggers:
+  - entity_id:
+    - event.button_sunrise_ch1
+    id: sunrise_on
+    trigger: state
+  - entity_id:
+    - event.button_sunrise_ch2
+    id: sunrise_off
+    trigger: state
+  conditions: []
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - sunrise_on
+    then:
+    - if:
+      - condition: state
+        entity_id: event.button_sunrise_ch1
+        attribute: event_type
+        state: press_short
+      then:
+      - metadata: {}
+        data:
+          qos: '1'
+          topic: Sunrise_Schrank/wakeAlarm
+          payload: '1200'
+        action: mqtt.publish
+      - metadata: {}
+        data:
+          qos: '1'
+          topic: Sunrise_Bett/wakeAlarm
+          payload: '1200'
+        action: mqtt.publish
+      else:
+      - metadata: {}
+        data:
+          qos: '1'
+          topic: Sunrise_Bett/wakeAlarm
+          payload: '5'
+        action: mqtt.publish
+      - metadata: {}
+        data:
+          qos: '1'
+          topic: Sunrise_Schrank/wakeAlarm
+          payload: '5'
+        action: mqtt.publish
+  - if:
+    - condition: trigger
+      id:
+      - sunrise_off
+    then:
+    - metadata: {}
+      data:
+        qos: '1'
+        topic: Sunrise_Bett/command
+        payload: 'off'
+      action: mqtt.publish
+    - metadata: {}
+      data:
+        qos: '1'
+        topic: Sunrise_Schrank/command
+        payload: 'off'
+      action: mqtt.publish
+  mode: single
+- id: '1715544742707'
+  alias: Sunrise_ausschalten
+  description: ''
+  triggers:
+  - at: 07:30:00
+    trigger: time
+  - at: 09:00:00
+    trigger: time
+  conditions: []
+  actions:
+  - action: input_select.select_option
+    metadata: {}
+    data:
+      option: 'off'
+    target:
+      entity_id: input_select.sunrise_mode
+  mode: single
+- id: '1715580397132'
+  alias: Executer_Luftkuehlung
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.luftkuehlung_modus
+    - input_boolean.lueftkuehlung_automatik
+  condition:
+  - condition: state
+    entity_id: input_boolean.lueftkuehlung_automatik
+    state: 'on'
+  action:
+  - if:
+    - condition: state
+      entity_id: sensor.luftkuehlung_modus
+      state: 'on'
+    then:
+    - service: switch.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: switch.plug_luftkuehlung
+  - if:
+    - condition: state
+      entity_id: sensor.luftkuehlung_modus
+      state: 'off'
+    then:
+    - service: switch.turn_off
+      target:
+        entity_id:
+        - switch.plug_luftkuehlung
+      data: {}
+  mode: single
+- id: '1716408468216'
+  alias: Increment Raincounter
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.contact_rainsensor_contact
+    to: 'off'
+    from: 'on'
+  - platform: state
+    entity_id:
+    - binary_sensor.contact_rainsensor_contact
+    to: 'on'
+    from: 'off'
+  condition: []
+  action:
+  - service: counter.increment
+    metadata: {}
+    data: {}
+    target:
+      entity_id: counter.rain_counter
+  mode: single
+- id: '1717220819550'
+  alias: Timer Night Lights on
+  description: ''
+  trigger:
+  - platform: time
+    at: '19:30:00'
+  condition: []
+  action:
+  - service: scene.turn_on
+    metadata: {}
+    target:
+      entity_id: scene.night_lights
+  mode: single
+- id: '1717445597279'
+  alias: Lightcontrol_Livingroom_TVdim2
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.none_tasmota_sd108_energy_power
+    - input_select.lightmode_livingroom
+    enabled: false
+  - platform: numeric_state
+    entity_id:
+    - sensor.none_tasmota_sd108_energy_power
+    above: 40
+    id: TV_on
+  - platform: numeric_state
+    entity_id:
+    - sensor.none_tasmota_sd108_energy_power
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+    id: TV_off
+    below: 30
+  condition:
+  - condition: state
+    entity_id: input_select.lightmode_livingroom
+    state: on_tvdim
+  action:
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.none_tasmota_sd108_energy_power
+        above: 40
+        enabled: false
+      - condition: trigger
+        id:
+        - TV_on
+      sequence:
+      - service: input_select.select_option
+        metadata: {}
+        data:
+          option: low
+        target:
+          entity_id: input_select.lightstate_livingroom
+    - conditions:
+      - condition: trigger
+        id:
+        - TV_off
+      sequence:
+      - service: input_select.select_option
+        metadata: {}
+        data:
+          option: 'on'
+        target:
+          entity_id: input_select.lightstate_livingroom
+    default: []
+  mode: single
+- id: '1718216678894'
+  alias: Surveillance Solar Inverter
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id:
+    - sensor.solar_energy_diff
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    above: 200
+  condition: []
+  action:
+  - service: notify.pushover
+    metadata: {}
+    data:
+      title: Solarinverter Ausfall!
+      message: Länger als 5 Minute 200W Differenz zwischen den Invertern.
+  mode: single
+- id: '1722886044999'
+  alias: Notification Partykeller Lüften auf
+  description: ''
+  trigger:
+  - platform: template
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    value_template: '{{ states(''sensor.thermostat_partykeller_humidity_abs'') |float
+      > states(''sensor.thermometer_aussen_humidity_abs'') |float + 1}}'
+  condition:
+  - condition: state
+    entity_id: binary_sensor.contact_partykeller_fenster2_contact
+    state: 'off'
+  action:
+  - service: notify.pushover
+    metadata: {}
+    data:
+      message: 'Fenster öffnen {{- ''\n'' -}} (In: {{states(''sensor.thermostat_partykeller_humidity_abs'')|float
+        }},  Out: {{states(''sensor.thermometer_aussen_humidity_abs'') |float }})'
+      title: Partykeller Lüften
+  mode: single
+- id: '1722886330578'
+  alias: Notification Partykeller Lüften zu
+  description: ''
+  trigger:
+  - platform: template
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    value_template: '{{ states(''sensor.thermostat_partykeller_humidity_abs'') |float
+      < states(''sensor.thermometer_aussen_humidity_abs'') |float + 0.2}}'
+  condition:
+  - condition: state
+    entity_id: binary_sensor.contact_partykeller_fenster2_contact
+    state: 'on'
+  action:
+  - service: notify.pushover
+    metadata: {}
+    data:
+      message: 'Fenster schließen {{- ''\n'' -}} (In: {{states(''sensor.thermostat_partykeller_humidity_abs'')
+        |float }}, Out: {{states(''sensor.thermometer_aussen_humidity_abs'') |float
+        }})'
+      title: Partykeller Lüften
+  mode: single
+- id: '1722969099496'
+  alias: Notification Oben Lüften auf
+  description: ''
+  trigger:
+  - platform: template
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    value_template: '{{ states(''sensor.oben_temperatur_min'') |float > states(''sensor.thermometer_aussen_temperatur'')
+      |float + 0.6
+
+      and states(''sensor.oben_temperatur_min'') |float > 23 }}'
+  condition:
+  - condition: state
+    entity_id: binary_sensor.contact_schlafzimmer
+    state: 'off'
+  action:
+  - service: notify.pushover
+    metadata: {}
+    data:
+      message: 'Fenster öffnen {{- ''\n'' -}} (In min: {{states(''sensor.oben_temperatur_min'')
+        |float }}°C, Out: {{states(''sensor.thermometer_aussen_temperatur'') |float
+        }}°C)'
+      title: Oben Lüften
+  mode: single
+- id: '1722969294514'
+  alias: Notification Oben Lüften zu
+  description: ''
+  trigger:
+  - platform: template
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    value_template: '{{ states(''sensor.oben_temperatur_min'') |float < states(''sensor.thermometer_aussen_temperatur'')
+      |float + 0.5
+
+      and states(''sensor.thermometer_aussen_temperatur'') |float > 20 }}'
+  condition:
+  - condition: state
+    entity_id: binary_sensor.contact_schlafzimmer
+    state: 'on'
+  action:
+  - service: notify.pushover
+    metadata: {}
+    data:
+      message: 'Fenster schließen {{- ''\n'' -}} (In min: {{states(''sensor.oben_temperatur_min'')
+        |float}}°C, Out: {{states(''sensor.thermometer_aussen_temperatur'') |float
+        }}°C)'
+      title: Oben Lüften
+  - service: tts.speak
+    metadata: {}
+    data:
+      cache: true
+      media_player_entity_id: media_player.wohnzimmer
+      message: Fenster oben schließen, es ist warm geworden!
+  mode: single
+- id: '1727589451599'
+  alias: Executer Automatic Luftentfeuchter Partykeller
+  description: ''
+  triggers:
+  - minutes: /15
+    trigger: time_pattern
+  - entity_id:
+    - input_select.luftentfeuchter_pk_mode_selector
+    trigger: state
+  - entity_id:
+    - sensor.luftentfeuchter_control
+    trigger: state
+  conditions: []
+  actions:
+  - alias: Bedungung Mode Selector on
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_pk_mode_selector
+      state: 'on'
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id:
+        - switch.tasmota_sd101_tasmota_sd101_luftentfeuchter
+      data: {}
+  - alias: Bedungung Mode Selector off
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_pk_mode_selector
+      state: 'off'
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id:
+        - switch.tasmota_sd101_tasmota_sd101_luftentfeuchter
+      data: {}
+  - alias: Bedungung Mode Selector auto force
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_pk_mode_selector
+      state: auto force
+    then:
+    - if:
+      - condition: state
+        entity_id: sensor.luftentfeuchter_control
+        state: 'on'
+      - condition: time
+        before: '17:00:00'
+      - condition: numeric_state
+        entity_id: sensor.solar_power_sum
+        below: 1500
+      then:
+      - metadata: {}
+        data: {}
+        target:
+          entity_id: switch.tasmota_sd101_tasmota_sd101_luftentfeuchter
+        action: switch.turn_on
+      else:
+      - target:
+          entity_id:
+          - switch.tasmota_sd101_tasmota_sd101_luftentfeuchter
+        data: {}
+        action: switch.turn_off
+  - alias: Bedungung Mode Selector auto eco
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_pk_mode_selector
+      state: auto eco
+    then:
+    - if:
+      - condition: numeric_state
+        entity_id: sensor.batt_bms_mem
+        above: 98
+      - condition: numeric_state
+        entity_id: sensor.solar_power_sum
+        below: 1500
+      then:
+      - action: switch.turn_on
+        target:
+          entity_id:
+          - switch.tasmota_sd101_tasmota_sd101_luftentfeuchter
+        data: {}
+      else:
+      - action: switch.turn_off
+        target:
+          entity_id:
+          - switch.tasmota_sd101_tasmota_sd101_luftentfeuchter
+        data: {}
+  mode: single
+- id: '1727724577441'
+  alias: Lightexecuter Aquarium
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - schedule.aquarium_licht_zeitschaltuhr
+  - minutes: /15
+    trigger: time_pattern
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: schedule.aquarium_licht_zeitschaltuhr
+        state: 'on'
+      sequence:
+      - action: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.sd13
+    - conditions:
+      - condition: state
+        entity_id: schedule.aquarium_licht_zeitschaltuhr
+        state: 'off'
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id:
+          - switch.sd13
+        data: {}
+  mode: restart
+- id: '1727726345840'
+  alias: Timer Aufstehen
+  description: ''
+  trigger:
+  - platform: time
+    at: 07:00:00
+  condition: []
+  action:
+  - action: input_select.select_option
+    target:
+      entity_id: input_select.lightmode_aquarium
+    data:
+      option: 'on'
+  mode: single
+- id: '1727726668033'
+  alias: Timer Bettgehen
+  description: ''
+  trigger:
+  - platform: time
+    at: '19:00:00'
+  condition: []
+  action:
+  - action: input_select.select_option
+    target:
+      entity_id: input_select.lightmode_aquarium
+    data:
+      option: 'off'
+  mode: single
+- id: '1729459139105'
+  alias: Solvis HK1 Boost Turnoff
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.solvis_hk1_boost
+    to: 'on'
+  conditions: []
+  actions:
+  - delay:
+      hours: 1
+      minutes: 0
+      seconds: 0
+      milliseconds: 0
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.solvis_hk1_boost
+    data: {}
+  mode: single
+- id: '1729459972012'
+  alias: Solvis HK1 Boost Executer
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.solvis_hk1_boost
+    to:
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.solvis_hk1_boost
+        state: 'on'
+      sequence:
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 2818
+          value: 3
+        action: modbus.write_register
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.solvis_hk1_boost
+        state: 'off'
+      sequence:
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 2818
+          value: 2
+        action: modbus.write_register
+  mode: single
+- id: '1729711444059'
+  alias: Watersensor Alarm Pushover
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.watersensor_keller_water_leak
+    to: 'on'
+  conditions: []
+  actions:
+  - action: notify.pushover
+    metadata: {}
+    data:
+      message: Wasser im Waschkeller!
+      title: Haus Alarm
+  mode: single
+- id: '1729713468505'
+  alias: Low battery level detection & notification for all battery sensors
+  description: ''
+  use_blueprint:
+    path: myBlueprints/low-battery-level-detection-notification-for-all-battery-sensors.yaml
+    input:
+      time: '20:00:00'
+      actions:
+      - action: notify.pushover
+        metadata: {}
+        data:
+          message: '{{sensors}}'
+          title: Batterys low
+      threshold: 20
+      exclude:
+        entity_id:
+        - sensor.philleicht_battery_level
+        - sensor.ipad_phil_battery_level
+        - sensor.ipad_phil_2_battery_level
+        - sensor.batt_bms_mem
+        - sensor.battbms_soc
+- id: '1729924197481'
+  alias: Executer Automatic Luftentfeuchter Gästezimmer alt
+  description: ''
+  triggers:
+  - entity_id:
+    - sensor.luftentfeuchter_control
+    trigger: state
+  - minutes: /15
+    trigger: time_pattern
+  - entity_id:
+    - input_select.luftentfeuchter_gz_mode_selector
+    trigger: state
+  conditions: []
+  actions:
+  - alias: Bedungung Mode Selector on
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_gz_mode_selector
+      state: 'on'
+    then:
+    - action: switch.turn_on
+      data: {}
+      target:
+        entity_id: switch.sd15
+  - alias: Bedungung Mode Selector off
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_gz_mode_selector
+      state: 'off'
+    then:
+    - action: switch.turn_off
+      data: {}
+      target:
+        entity_id: switch.sd15
+  - alias: Wenn Hygrostatsteuerung aus
+    if:
+    - condition: state
+      entity_id: humidifier.hygrostat_gastzimmer
+      state: 'off'
+    then:
+    - alias: Bedungung Mode Selector automatic force
+      if:
+      - condition: state
+        entity_id: input_select.luftentfeuchter_gz_mode_selector
+        state: auto force
+      then:
+      - if:
+        - condition: state
+          entity_id: sensor.luftentfeuchter_control
+          state: 'on'
+        - condition: time
+          before: '17:00:00'
+        then:
+        - metadata: {}
+          data: {}
+          action: switch.turn_on
+          target:
+            entity_id: switch.sd15
+        else:
+        - data: {}
+          action: switch.turn_off
+          target:
+            entity_id: switch.sd15
+    - alias: Bedungung Mode Selector automatic eco
+      if:
+      - condition: state
+        entity_id: input_select.luftentfeuchter_gz_mode_selector
+        state: auto eco
+      then:
+      - if:
+        - condition: numeric_state
+          entity_id: sensor.batt_bms_mem
+          above: 98
+        then:
+        - action: switch.turn_on
+          target:
+            entity_id:
+            - switch.sd15
+          data: {}
+        else:
+        - action: switch.turn_off
+          target:
+            entity_id:
+            - switch.sd15
+          data: {}
+  mode: single
+- id: '1730154674848'
+  alias: Executer Automatic Luftentfeuchter Gästezimmer Alt2
+  description: ''
+  triggers:
+  - entity_id:
+    - sensor.luftentfeuchter_control
+    trigger: state
+  - minutes: /15
+    trigger: time_pattern
+  - entity_id:
+    - input_select.luftentfeuchter_gz_mode_selector
+    trigger: state
+  - trigger: state
+    entity_id:
+    - schedule.luftentfeuchter_on_zeitschaltuhr
+  - trigger: state
+    entity_id:
+    - input_boolean.hygrostat_zeitschaltur_aktivierung
+  conditions: []
+  actions:
+  - alias: Zeitschaltuhr Hygrostate setzen
+    if:
+    - condition: state
+      entity_id: schedule.luftentfeuchter_on_zeitschaltuhr
+      state: 'on'
+    - condition: state
+      entity_id: input_boolean.hygrostat_zeitschaltur_aktivierung
+      state: 'on'
+    then:
+    - action: humidifier.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id:
+        - humidifier.hygrostat_gastzimmer
+        - humidifier.hygrostat_partykeller
+    else:
+    - action: humidifier.turn_off
+      target:
+        entity_id:
+        - humidifier.hygrostat_gastzimmer
+        - humidifier.hygrostat_partykeller
+      data: {}
+  - alias: Bedungung Mode Selector on
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_gz_mode_selector
+      state: 'on'
+    then:
+    - action: switch.turn_on
+      data: {}
+      target:
+        entity_id: switch.sd15
+  - alias: Bedungung Mode Selector off
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_gz_mode_selector
+      state: 'off'
+    then:
+    - action: switch.turn_off
+      data: {}
+      target:
+        entity_id: switch.sd15
+  - alias: Wenn Hygrostatsteuerung aus
+    if:
+    - condition: state
+      entity_id: humidifier.hygrostat_partykeller
+      state: 'off'
+    then:
+    - alias: Bedungung Mode Selector auto force
+      if:
+      - condition: state
+        entity_id: input_select.luftentfeuchter_gz_mode_selector
+        state: auto force
+      then:
+      - if:
+        - condition: state
+          entity_id: sensor.luftentfeuchter_control
+          state: 'on'
+        - condition: time
+          before: '17:00:00'
+        then:
+        - metadata: {}
+          data: {}
+          action: switch.turn_on
+        else:
+        - data: {}
+          action: switch.turn_off
+          target:
+            entity_id: switch.sd15
+    - alias: Bedungung Mode Selector auto eco
+      if:
+      - condition: state
+        entity_id: input_select.luftentfeuchter_gz_mode_selector
+        state: auto eco
+      then:
+      - if:
+        - condition: numeric_state
+          entity_id: sensor.batt_bms_mem
+          above: 98
+        then:
+        - action: switch.turn_on
+          data: {}
+          target:
+            entity_id: switch.sd15
+        else:
+        - action: switch.turn_off
+          data: {}
+          target:
+            entity_id: switch.sd15
+  mode: single
+- id: '1730230354663'
+  alias: Sunrise Executer
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.sunrise_mode
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: input_select.sunrise_mode
+      state: slow
+    then:
+    - metadata: {}
+      data:
+        qos: '1'
+        topic: Sunrise_Schrank/wakeAlarm
+        payload: '1200'
+      action: mqtt.publish
+    - metadata: {}
+      data:
+        qos: '1'
+        topic: Sunrise_Bett/wakeAlarm
+        payload: '1200'
+      action: mqtt.publish
+  - if:
+    - condition: state
+      entity_id: input_select.sunrise_mode
+      state: fast
+    then:
+    - metadata: {}
+      data:
+        qos: '1'
+        topic: Sunrise_Bett/wakeAlarm
+        payload: '5'
+      action: mqtt.publish
+    - metadata: {}
+      data:
+        qos: '1'
+        topic: Sunrise_Schrank/wakeAlarm
+        payload: '5'
+      action: mqtt.publish
+  - if:
+    - condition: state
+      entity_id: input_select.sunrise_mode
+      state: 'off'
+    then:
+    - metadata: {}
+      data:
+        qos: '1'
+        topic: Sunrise_Bett/command
+        payload: 'off'
+      action: mqtt.publish
+    - metadata: {}
+      data:
+        qos: '1'
+        topic: Sunrise_Schrank/command
+        payload: 'off'
+      action: mqtt.publish
+  mode: single
+- id: '1730230774851'
+  alias: Sunrise Mode Switch
+  description: ''
+  triggers:
+  - entity_id:
+    - event.button_sunrise_ch1
+    id: sunrise_on
+    trigger: state
+  - entity_id:
+    - event.button_sunrise_ch2
+    id: sunrise_off
+    trigger: state
+  conditions: []
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - sunrise_on
+    then:
+    - if:
+      - condition: state
+        entity_id: event.button_sunrise_ch1
+        attribute: event_type
+        state: press_short
+      - condition: state
+        entity_id: input_select.sunrise_mode
+        state: 'off'
+      then:
+      - action: input_select.select_option
+        metadata: {}
+        data:
+          option: slow
+        target:
+          entity_id: input_select.sunrise_mode
+      else:
+      - action: input_select.select_option
+        metadata: {}
+        data:
+          option: fast
+        target:
+          entity_id: input_select.sunrise_mode
+  - if:
+    - condition: trigger
+      id:
+      - sunrise_off
+    then:
+    - action: input_select.select_option
+      metadata: {}
+      data:
+        option: 'off'
+      target:
+        entity_id: input_select.sunrise_mode
+  mode: single
+- id: '1731835277602'
+  alias: NSPanel Configuration
+  description: ''
+  use_blueprint:
+    path: Blackymas/nspanel_blueprint.yaml
+    input:
+      nspanel_name: 0bee0bd3147322f029f5a5676cd21a3b
+      language: de
+      timezone: Europe/Berlin (CET-1CEST,M3.5.0,M10.5.0/3)
+      decimal_separator: ','
+      weather_entity: weather.forecast_home
+      outdoortemp: sensor.thermometer_aussen_temperatur
+      indoortemp: sensor.heat_fluroben_temperatur
+      home_value01: sensor.thermostat_schlafzimmer_temperatur
+      home_value01_icon: mdi:bed
+      home_value02: sensor.heat_jost_temperatur
+      home_value03: sensor.heat_nori_temperatur
+      home_value03_icon: mdi:human-female-girl
+      home_value03_icon_color:
+      - 255
+      - 64
+      - 255
+      home_value03_label_color:
+      - 255
+      - 64
+      - 255
+      home_value04_icon: mdi:battery-50
+      home_value02_label_color:
+      - 0
+      - 252
+      - 255
+      home_value02_icon_color:
+      - 0
+      - 252
+      - 255
+      home_value04_label_color:
+      - 254
+      - 255
+      - 255
+      home_value04_icon_color:
+      - 254
+      - 255
+      - 255
+      screensaver_display_time: true
+      climate: climate.thermostat_wohnzimmer
+      climate_chip_always_visible: true
+      entitypages_show_entities_icons: true
+      wake_up_sensors:
+      - binary_sensor.motion_fluroben_occupancy
+      home_custom_button01: switch.sd18
+      home_custom_button01_icon: mdi:bus-electric
+      home_custom_button01_name: Blockheater
+      home_custom_button02: climate.heat_gaestezimmer
+      home_custom_button02_icon: mdi:heat-wave
+      home_custom_button02_name: Heizung Gästzimmer
+      custom_buttons_font_size: '8'
+      screensaver_display_time_font_size: '12'
+      home_outdoor_temp_font: '5'
+      home_value01_icon_color:
+      - 254
+      - 255
+      - 255
+      home_value01_label_color:
+      - 254
+      - 255
+      - 255
+      home_value02_icon: mdi:human-male-boy
+      home_value04: sensor.batt_bms_mem
+- id: '1732475930342'
+  alias: Solvis HK1 Rise Executer
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_boolean.solvis_hk1_rise
+    to:
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.solvis_hk1_rise
+        state: 'on'
+      sequence:
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 2826
+          value: 160
+        action: modbus.write_register
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.solvis_hk1_rise
+        state: 'off'
+      sequence:
+      - data:
+          hub: Solvis
+          unit: 1
+          address: 2826
+          value: 120
+        action: modbus.write_register
+  mode: single
+- id: '1732477207037'
+  alias: Solvis HK1 Rise Automation
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.heat_jost_valve_state
+    for:
+      hours: 1
+      minutes: 0
+      seconds: 0
+    above: 90
+    id: Jost_limit
+  - trigger: numeric_state
+    entity_id:
+    - sensor.heat_partykeller1_valve_state
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    above: 90
+    id: pk_limit
+  - trigger: template
+    value_template: '{{ max( states(''sensor.heat_jost_valve_state'') | int , states(''sensor.heat_partykeller1_valve_state'')
+      | int ) <  90 }}'
+    for:
+      hours: 1
+      minutes: 0
+      seconds: 0
+    id: all_nolimit
+  conditions: []
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - Jost_limit
+      - pk_limit
+    then:
+    - action: input_boolean.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: input_boolean.solvis_hk1_rise
+  - if:
+    - condition: trigger
+      id:
+      - all_nolimit
+    then:
+    - action: input_boolean.turn_off
+      target:
+        entity_id:
+        - input_boolean.solvis_hk1_rise
+      data: {}
+  mode: single
+- id: '1732960863246'
+  alias: Weihnachtsbeleuchtung alles
+  description: ''
+  triggers:
+  - trigger: time
+    at: 06:00:00
+    id: On1
+  - trigger: time
+    at: 08:15:00
+    id: Off1
+  - trigger: sun
+    event: sunset
+    offset: 0
+    id: On2
+  - trigger: time
+    at: '23:30:00'
+    id: Off2
+  - trigger: time
+    at: '22:00:00'
+    id: Off Schlafzimmer
+  conditions: []
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - On1
+      - On2
+    then:
+    - action: scene.turn_on
+      metadata: {}
+      target:
+        entity_id: scene.weihnachtsbeleuchtung_an
+    alias: Weihnachtslichter ein
+  - if:
+    - condition: trigger
+      id:
+      - Off1
+      - Off2
+    then:
+    - action: scene.turn_on
+      metadata: {}
+      target:
+        entity_id: scene.weihnachtsbeleuchtung_aus
+    alias: Weihnachtslicher aus
+  - if:
+    - condition: trigger
+      id:
+      - On2
+    then:
+    - action: switch.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: switch.tasmota_sd117
+    alias: Schlafzimmer ein
+  - alias: Schlafzimmer ein
+    if:
+    - condition: trigger
+      id:
+      - Off Schlafzimmer
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id:
+        - switch.tasmota_sd117
+      data: {}
+  mode: single
+- id: '1733080530650'
+  alias: Blockheater
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - switch.sd18
+    to: 'on'
+    for:
+      hours: 1
+      minutes: 0
+      seconds: 0
+    id: Watchdog Timeout
+  - trigger: state
+    entity_id:
+    - schedule.blockeater_scheduel
+    to: 'on'
+    id: Schedule on
+  - trigger: state
+    entity_id:
+    - schedule.blockeater_scheduel
+    to: 'off'
+    id: Schedule off
+  conditions: []
+  actions:
+  - alias: Blockheater anschalten
+    if:
+    - condition: trigger
+      id:
+      - Schedule on
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id:
+        - switch.sd18
+      data: {}
+  - alias: Blockheater anschalten
+    if:
+    - condition: trigger
+      id:
+      - Watchdog Timeout
+      - Schedule off
+    then:
+    - action: switch.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: switch.sd18
+  mode: single
+- id: '1734464424903'
+  alias: Alarm Einbruch
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.contact_wohnzimmer
+    - binary_sensor.contact_haustur
+    - binary_sensor.contact_terrasse
+    - binary_sensor.contact_esszimmer
+    - binary_sensor.contact_kellertur
+    - binary_sensor.contact_schuppen_vorne_contact
+    to: 'on'
+    id: offen
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+  - trigger: state
+    entity_id:
+    - binary_sensor.contact_wohnzimmer
+    - binary_sensor.contact_haustur
+    - binary_sensor.contact_terrasse
+    - binary_sensor.contact_esszimmer
+    - binary_sensor.contact_kellertur
+    to: 'on'
+    id: 10s offen
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+  - trigger: state
+    entity_id:
+    - binary_sensor.contact_wohnzimmer
+    - binary_sensor.contact_haustur
+    - binary_sensor.contact_terrasse
+    - binary_sensor.contact_esszimmer
+    - binary_sensor.contact_kellertur
+    to: 'on'
+    id: 30s offen
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
+  conditions:
+  - condition: state
+    entity_id: input_boolean.switch_anwesenheit
+    state: 'off'
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - offen
+    then:
+    - action: notify.mobile_app_philleicht
+      metadata: {}
+      data:
+        title: EINBRUCHALARM!
+        message: '{{ trigger.to_state.name }} offen!'
+        data:
+          push:
+            interruption-level: critical
+  - if:
+    - condition: trigger
+      id:
+      - 10s offen
+    then:
+    - action: notify.mobile_app_philleicht
+      metadata: {}
+      data:
+        title: EINBRUCHALARM!
+        message: '{{ trigger.to_state.name }} 10s offen!'
+        data:
+          push:
+            interruption-level: critical
+  - if:
+    - condition: trigger
+      id:
+      - 30s offen
+    then:
+    - action: notify.mobile_app_philleicht
+      metadata: {}
+      data:
+        title: EINBRUCHALARM!
+        message: '{{ trigger.to_state.name }} 30s offen!'
+        data:
+          push:
+            interruption-level: critical
+  mode: restart
+- id: '1740519069914'
+  alias: Garage Switch reset
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - switch.switch_garage_ch1
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 1
+  conditions: []
+  actions:
+  - type: turn_off
+    device_id: 60f4e2291ae3288466812babe29354bc
+    entity_id: 64413d8eb88e956ad81ca7f51c6317af
+    domain: switch
+  mode: single
+- id: '1740610867772'
+  alias: Aquarium Filter Decrement
+  description: ''
+  triggers:
+  - trigger: time
+    at: 00:15:00
+  conditions: []
+  actions:
+  - action: input_number.decrement
+    metadata: {}
+    data: {}
+    target:
+      entity_id:
+      - input_number.aquarium_white
+      - input_number.aquarium_black
+      - input_number.aquarium_blue
+      - input_number.aquarium_green
+  mode: single
+- id: '1751315633401'
+  alias: Executer Automatic Luftentfeuchter Gästezimmer
+  description: ''
+  triggers:
+  - minutes: /15
+    trigger: time_pattern
+  - entity_id:
+    - input_select.luftentfeuchter_gz_mode_selector
+    trigger: state
+  - entity_id:
+    - sensor.luftentfeuchter_control
+    trigger: state
+  conditions: []
+  actions:
+  - alias: Bedungung Mode Selector on
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_gz_mode_selector
+      state: 'on'
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id:
+        - switch.sd15
+      data: {}
+  - alias: Bedungung Mode Selector off
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_gz_mode_selector
+      state: 'off'
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id:
+        - switch.sd15
+      data: {}
+  - alias: Bedungung Mode Selector auto force
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_gz_mode_selector
+      state: auto force
+    then:
+    - if:
+      - condition: state
+        entity_id: sensor.luftentfeuchter_control
+        state: 'on'
+      - condition: time
+        before: '17:00:00'
+      - condition: numeric_state
+        entity_id: sensor.solar_power_sum
+        below: 1500
+      then:
+      - metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - switch.sd15
+        action: switch.turn_on
+      else:
+      - target:
+          entity_id:
+          - switch.sd15
+        data: {}
+        action: switch.turn_off
+  - alias: Bedungung Mode Selector auto eco
+    if:
+    - condition: state
+      entity_id: input_select.luftentfeuchter_pk_mode_selector
+      state: auto eco
+    then:
+    - if:
+      - condition: numeric_state
+        entity_id: sensor.batt_bms_mem
+        above: 98
+      - condition: numeric_state
+        entity_id: sensor.solar_power_sum
+        below: 1500
+      then:
+      - action: switch.turn_on
+        target:
+          entity_id:
+          - switch.sd15
+        data: {}
+      else:
+      - action: switch.turn_off
+        target:
+          entity_id:
+          - switch.sd15
+        data: {}
+  mode: single
+- id: '1762373613005'
+  alias: Lightcontrol3_Livingroom
+  description: ''
+  use_blueprint:
+    path: myBlueprints/LightcontrolPresence_Blueprint.yaml
+    input:
+      presence_sensor_1: binary_sensor.wohnzimmer_presence_presence_sensor_1
+      illuminance_sensor: sensor.wohnzimmer_presence_light_sensor_light_level
+      lightmode_helper: input_select.lightmode_livingroom
+      lightstate_helper: input_select.lightstate_livingroom
+      illuminance_limit_on: 10
+      illuminance_limit_off: 15
+      wait_time_low: 600
+- id: '1762379537397'
+  alias: Lightexecuter2 Livingroom
+  description: ''
+  triggers:
+  - entity_id:
+    - input_select.lightstate_livingroom
+    - binary_sensor.presence_sensor_fp2_daf9_presence_sensor_3
+    trigger: state
+  - hours: /1
+    trigger: time_pattern
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: 'on'
+      sequence:
+      - metadata: {}
+        data:
+          brightness: 255
+        target:
+          entity_id:
+          - light.wz_lowlight1
+          - light.wz_lowlight2
+        action: light.turn_on
+      - metadata: {}
+        data:
+          hs_color:
+          - 10
+          - 100
+          brightness: 70
+        target:
+          entity_id: light.light_rgbw_livingroom_window
+        action: light.turn_on
+      - metadata: {}
+        data:
+          hs_color:
+          - 28
+          - 100
+          brightness: 255
+        target:
+          entity_id:
+          - light.tasmota_led205_tasmota
+        action: light.turn_on
+      - metadata: {}
+        data:
+          brightness_pct: 80
+        target:
+          entity_id: light.tasmota_led200_tasmota_led200_klavier
+        action: light.turn_on
+      - metadata: {}
+        data:
+          brightness_pct: 100
+        target:
+          entity_id: light.mqtt_couchleuchte_tasmota
+        action: light.turn_on
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.presence_sensor_fp2_daf9_presence_sensor_3
+            state: 'on'
+          sequence:
+          - metadata: {}
+            data:
+              hs_color:
+              - 29
+              - 100
+              brightness: 255
+            target:
+              entity_id: light.tasmota_led206_tasmota
+            action: light.turn_on
+        default:
+        - metadata: {}
+          data:
+            hs_color:
+            - 29
+            - 100
+            brightness: 170
+          target:
+            entity_id: light.tasmota_led206_tasmota
+          action: light.turn_on
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: low
+      sequence:
+      - metadata: {}
+        data:
+          brightness: 100
+          transition: 3
+        target:
+          entity_id:
+          - light.wz_lowlight1
+          - light.wz_lowlight2
+        action: light.turn_on
+      - metadata: {}
+        data:
+          hs_color:
+          - 10
+          - 100
+          brightness: 30
+        target:
+          entity_id: light.light_rgbw_livingroom_window
+        action: light.turn_on
+      - metadata: {}
+        data:
+          hs_color:
+          - 10
+          - 100
+          brightness: 100
+        target:
+          entity_id:
+          - light.tasmota_led205_tasmota
+        action: light.turn_on
+      - metadata: {}
+        data:
+          brightness_pct: 40
+        target:
+          entity_id:
+          - light.tasmota_led200_tasmota_led200_klavier
+          - light.mqtt_couchleuchte_tasmota
+        action: light.turn_on
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: binary_sensor.presence_sensor_fp2_daf9_presence_sensor_3
+            state: 'on'
+          sequence:
+          - metadata: {}
+            data:
+              hs_color:
+              - 10
+              - 100
+              brightness: 100
+            target:
+              entity_id:
+              - light.tasmota_led206_tasmota
+            action: light.turn_on
+        default:
+        - metadata: {}
+          data:
+            hs_color:
+            - 25
+            - 100
+            brightness: 100
+          target:
+            entity_id:
+            - light.tasmota_led206_tasmota
+          action: light.turn_on
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_livingroom
+        state: 'off'
+      sequence:
+      - metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - light.wz_lowlight1
+          - light.wz_lowlight2
+        action: light.turn_off
+      - metadata: {}
+        data:
+          hs_color:
+          - 10
+          - 100
+          transition: 10
+          brightness: 0
+        target:
+          entity_id: light.light_rgbw_livingroom_window
+        action: light.turn_on
+      - metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - light.tasmota_led200_tasmota_led200_klavier
+          - light.mqtt_couchleuchte_tasmota
+          - light.tasmota_led205_tasmota
+          - light.tasmota_led206_tasmota
+        action: light.turn_off
+  mode: restart
+- id: '1765318557972'
+  alias: Lightcontrol2_Esszimmer
+  description: ''
+  use_blueprint:
+    path: myBlueprints/LightcontrolPresence_Blueprint.yaml
+    input:
+      presence_sensor_1: binary_sensor.presence_sensor_fp2_0975_presence_sensor_1
+      illuminance_sensor: sensor.presence_sensor_fp2_0975_light_sensor_light_level
+      lightmode_helper: input_select.lightmode_esszimmer
+      lightstate_helper: input_select.lightstate_esszimmer
+      wait_time_low: 900
+      illuminance_limit_on: 15
+      illuminance_limit_off: 20
+- id: '1768100590681'
+  alias: Pool Haus Frostschutz Lüfter
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.poolcontrol_temp_pump_haus
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+    below: 0
+  conditions: []
+  actions:
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.poolcontrol_relais_gartenpumpe
+  mode: single
+- id: '1769462159944'
+  alias: Lightexecuter Gartenstrahler
+  description: ''
+  triggers:
+  - entity_id:
+    - input_select.lightstate_gartenstrahler
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenstrahler
+        state: 'on'
+      sequence:
+      - metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - switch.switch_terrasse_lights_ch2
+        action: switch.turn_on
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenstrahler
+        state: low
+      sequence:
+      - metadata: {}
+        data: {}
+        target:
+          entity_id:
+          - switch.switch_terrasse_lights_ch2
+        action: switch.turn_on
+    - conditions:
+      - condition: state
+        entity_id: input_select.lightstate_gartenstrahler
+        state: 'off'
+      sequence:
+      - target:
+          entity_id:
+          - switch.switch_terrasse_lights_ch2
+        data: {}
+        action: switch.turn_off
+  mode: restart
+- id: '1769462457616'
+  alias: Lightcontrol Gartenhaus
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.bewegungsmelder_kellertreppe_occupancy
+      motion_sensor_2: binary_sensor.bewegungsmelder_gartenhaus_occupancy
+      motion_sensor_3: binary_sensor.motion_terrasse_occupancy
+      motion_sensor_4: binary_sensor.bewegungsmelder_gartentor_occupancy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_gartenhaus
+      lightstate_helper: input_select.lightstate_gartenhaus
+      illuminance_limit: 2500
+- id: '1769462648088'
+  alias: Lightcontrol Gartenstrahler
+  description: ''
+  use_blueprint:
+    path: myBlueprints/Lightcontrol_Blueprint.yaml
+    input:
+      motion_sensor_1: binary_sensor.motion_dummy
+      motion_sensor_2: binary_sensor.bewegungsmelder_gartenhaus_occupancy
+      motion_sensor_3: binary_sensor.motion_terrasse_occupancy
+      motion_sensor_4: binary_sensor.bewegungsmelder_gartentor_occupancy
+      illuminance_sensor: sensor.weather_based_sun_illuminance
+      lightmode_helper: input_select.lightmode_gartenstrahler
+      lightstate_helper: input_select.lightstate_gartenstrahler
+      illuminance_limit: 2500
+- id: '1772135349909'
+  alias: Batt Discharge Executer
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.hms_2000_4t_power
+  - trigger: time_pattern
+    minutes: /5
+  - trigger: state
+    entity_id:
+    - sensor.batt_discharge_mode
+  conditions: []
+  actions:
+  - action: input_number.set_value
+    metadata: {}
+    data:
+      value: '{{ states(''sensor.inverter_power_target'') | float(0) }}'
+    target:
+      entity_id: input_number.inverter_power_target_memory
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: sensor.batt_discharge_mode
+        state:
+        - 'off'
+      sequence:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: '0'
+        target:
+          entity_id: number.hms_2000_4t_limit_nonpersistent_absolute
+      - choose:
+        - conditions:
+          - condition: numeric_state
+            entity_id: sensor.opendtu_542b74_ac_power
+            above: 0
+          sequence:
+          - action: button.press
+            metadata: {}
+            target:
+              entity_id: button.hms_2000_4t_turn_inverter_off
+            data: {}
+    default:
+    - action: number.set_value
+      metadata: {}
+      data:
+        value: '{{ states(''sensor.inverter_power_target'') | float(0) }}'
+      target:
+        entity_id: number.hms_2000_4t_limit_nonpersistent_absolute
+  mode: single
