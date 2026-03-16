@@ -1,0 +1,52 @@
+# Gitignore settings for ESPHome
+# This is an example and may include too much for your use-case.
+# You can modify this file to suit your needs.
+#/.esphome/
+
+# Secrets & sensible Daten
+secrets.yaml
+.storage/
+auth
+auth_provider.homeassistant
+
+# Datenbanken & Logs
+home-assistant_v2.db
+home-assistant_v2.db-shm
+home-assistant_v2.db-wal
+home-assistant.log
+home-assistant.log.1
+
+# Backups & temporäre Dateien
+backups/
+*.zip
+*.tar.gz
+
+# Interne HA-Dateien (nicht nötig im Repo)
+.cloud/
+deps/
+tts/
+www/cache/
+custom_components/
+.cache/
+.ha*
+.HA*
+
+# Studio Code Server
+.vscode/
+
+
+# Logs
+logs
+*.log*
+# Python cache
+__pycache__
+*.pyc
+
+# Other
+*.db
+
+
+tts
+www/icons
+www/floorplans
+www/community
