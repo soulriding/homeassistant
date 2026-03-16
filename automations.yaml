@@ -3352,3 +3352,57 @@
       target:
         entity_id: number.hms_2000_4t_limit_nonpersistent_absolute
   mode: single
+- id: '1773696516557'
+  alias: Batt Discharge Controller Executer
+  description: 'Zusammengeführte Steuerung: Leistungslimit (HMS) + Ein/Aus (HMS &
+    Soyo)'
+  triggers:
+  - trigger: state
+    entity_id: sensor.batt_discharge_mode
+    id: mode_change
+  - trigger: state
+    entity_id: sensor.hms_2000_4t_power
+    id: power_update
+  - trigger: time_pattern
+    minutes: /1
+    id: timer
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: sensor.batt_discharge_mode
+        state: 'off'
+      sequence:
+      - action: number.set_value
+        data:
+          value: '0'
+        target:
+          entity_id: number.hms_2000_4t_limit_nonpersistent_absolute
+      - condition: trigger
+        id:
+        - mode_change
+        - timer
+      - action: button.press
+        target:
+          entity_id: button.hms_2000_4t_turn_inverter_off
+    default:
+    - action: input_number.set_value
+      data:
+        value: '{{ states(''sensor.inverter_power_target'') | float(0) }}'
+      target:
+        entity_id: input_number.inverter_power_target_memory
+    - action: number.set_value
+      data:
+        value: '{{ states(''sensor.inverter_power_target'') | float(0) }}'
+      target:
+        entity_id: number.hms_2000_4t_limit_nonpersistent_absolute
+    - condition: trigger
+      id:
+      - mode_change
+      - timer
+    - action: button.press
+      target:
+        entity_id: button.hms_2000_4t_turn_inverter_on
+  mode: queued
+  max: 2
