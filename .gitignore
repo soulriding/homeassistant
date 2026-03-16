@@ -15,6 +15,8 @@ home-assistant_v2.db-shm
 home-assistant_v2.db-wal
 home-assistant.log
 home-assistant.log.1
+logs
+*.log*
 
 # Backups & temporäre Dateien
 backups/
@@ -26,6 +28,9 @@ backups/
 deps/
 tts/
 www/cache/
+www/icons
+www/floorplans
+www/community
 custom_components/
 .cache/
 .ha*
@@ -34,19 +39,11 @@ custom_components/
 # Studio Code Server
 .vscode/
 
-
-# Logs
-logs
-*.log*
 # Python cache
 __pycache__
 *.pyc
 
 # Other
 *.db
-
-
 tts
-www/icons
-www/floorplans
-www/community
+zigbee2mqtt/state.json
