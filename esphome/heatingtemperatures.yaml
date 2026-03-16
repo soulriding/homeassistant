@@ -1,0 +1,134 @@
+substitutions:
+  clientname: heatingtemperatures
+
+esphome:
+  name: heatingtemperatures
+  friendly_name: HeatingTemperatures
+
+esp8266:
+  board: d1_mini
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "k6lGBh4dlfYG1hNKbr06aZzhhvT8Jmw74dppdlzgsrM="
+
+ota:
+ - platform: esphome
+   password: "98cec48fda0dee11fbe52f4e1cbd7a5a"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Heatingtemperatures"
+    password: "bsdJhdSWtthi"
+
+captive_portal:
+    
+
+mqtt:
+  broker: 192.168.82.30
+  client_id: ${clientname}
+  reboot_timeout: 0s
+  username: Diggler
+  password: surfforlife
+  discovery: false
+  discovery_retain: false
+
+web_server:
+  port: 80
+  ota: false
+
+one_wire:
+  - platform: gpio
+    pin: GPIO14
+
+sensor:
+#  - platform: dallas_temp
+#    address: 0xc80000051460d028
+#    name: "Temp Wohnzimmer Boden"
+#    id: temp_wohnzimmer_boden
+#    state_topic: ${clientname}/TempWohnzimmerBoden
+  - platform: dallas_temp
+    address: 0x6b0417b13d7fff28
+    name: "Temp FbHz Kueche"
+    id: temp_fbhz_kueche
+    state_topic: ${clientname}/TempFbHzKueche
+  - platform: dallas_temp
+    address: 0xd90417b15e94ff28
+    name: "Temp FbHz Esszimmer"
+    id: temp_fbhz_esszimmer
+    state_topic: ${clientname}/TempFbHzEsszimmer
+  - platform: dallas_temp
+    address: 0xc20417b171e2ff28
+    name: "Temp FbHz Flur"
+    id: temp_fbhz_flur
+    state_topic: ${clientname}/TempFbHzFlur
+  - platform: dallas_temp
+    address: 0xff0517a290cbff28
+    name: "Temp FbHz Wohnzimmer1"
+    id: temp_fbhz_wohnzimmer1
+    state_topic: ${clientname}/TempFbHzWohnzimmer1
+  - platform: dallas_temp
+    address: 0xd70517b116feff28
+    name: "Temp FbHz Diele"
+    id: temp_fbhz_diele
+    state_topic: ${clientname}/TempFbHzDiele
+  - platform: dallas_temp
+    address: 0x5f0517a2f86fff28
+    name: "Temp FbHz Wohnzimmer2"
+    id: temp_fbzh_wohnzimmer2
+    state_topic: ${clientname}/TempFbHzWohnzimmer2
+  - platform: dallas_temp
+    address: 0x6e0517a2f9a9ff28
+    name: "Temp FbHz Arbeitszimmer"
+    id: temp_fbhz_arbeitszimmer
+    state_topic: ${clientname}/TempFbHzArbeitszimmer
+  - platform: dallas_temp
+    address: 0x560517a2b0e7ff28
+    name: "Temp FbHz Wohnzimmer3"
+    id: temp_fbzh_wohnzimmer3
+    state_topic: ${clientname}/TempFbHzWohnzimmer3
+#  - platform: dallas_temp
+#    address: 0x2c0000066ae32d28
+#    name: "Temp Aussen"
+#    id: temp_aussen
+#    state_topic: ${clientname}/TempAussen
+#  - platform: dallas_temp
+#    address: 0x5200000514923928
+#    name: "Temp Wohnzimmer"
+#    id: temp_wohnzimmer
+#    state_topic: ${clientname}/TempWohnzimmer
+
+
+
+#define TempWohnzimmerBoden OWDevice 28.D06014050000 60 #0xc80000051460d028
+#define TempFbHzKueche OWDevice 28.FF7F3DB11704 60 #0x6b0417b13d7fff28
+#define TempFbHzEsszimmer OWDevice 28.FF945EB11704 60 #0xd90417b15e94ff28
+#define TempFbHzFlur OWDevice 28.FFE271B11704 60 #0xc20417b171e2ff28
+#define TempFbHzWohnzimmer1 OWDevice 28.FFCB90A21705 60 #0xff0517a290cbff28
+#define TempFbHzDiele OWDevice 28.FFE7B0A21705 60 #0xd70517b116feff28
+#define TempFbHzWohnzimmer2 OWDevice 28.FF6FF8A21705 60 #0x5f0517a2f86fff28
+#define TempFbHzArbeitszimmer OWDevice 28.FFA9F9A21705 60 #0x6e0517a2f9a9ff28
+#define TempFbHzWohnzimmer3 OWDevice 28.FFFE16B11705 60 #0x560517a2b0e7ff28
+#define TempAussen OWDevice 28.2DE36A060000 60 #0x2c0000066ae32d28
+#define TempWohnzimmer OWDevice 28.399214050000 60 #0x5200000514923928
+
+
+#[11:43:55][D][dallas.sensor:084]:     0xc80000051460d028
+#[11:43:55][D][dallas.sensor:084]:     0x5200000514923928
+#[11:43:55][D][dallas.sensor:084]:     0x2c0000066ae32d28
+#[11:43:55][D][dallas.sensor:084]:     0xd90417b15e94ff28
+#[11:43:55][D][dallas.sensor:084]:     0xc20417b171e2ff28
+#[11:43:55][D][dallas.sensor:084]:     0xd70517b116feff28
+#[11:43:55][D][dallas.sensor:084]:     0x6e0517a2f9a9ff28
+#[11:43:55][D][dallas.sensor:084]:     0xff0517a290cbff28
+#[11:43:55][D][dallas.sensor:084]:     0x560517a2b0e7ff28
+#[11:43:55][D][dallas.sensor:084]:     0x5f0517a2f86fff28
+#[11:43:55][D][dallas.sensor:084]:     0x6b0417b13d7fff28

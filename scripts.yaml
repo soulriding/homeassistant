@@ -1,0 +1,176 @@
+neues_skript:
+  alias: FBHZcontrol Script
+  sequence:
+  - if:
+    - condition: state
+      entity_id: sensor.fbhzcontrol_mode
+      state: turbo
+    then:
+    - service: modbus.write_register
+      data:
+        hub: Solvis
+        unit: 1
+        address: 3078
+        value: 22
+    - service: modbus.write_register
+      data:
+        hub: Solvis
+        unit: 1
+        address: 3082
+        value: 80
+  - if:
+    - condition: state
+      entity_id: sensor.fbhzcontrol_mode
+      state: high
+    then:
+    - service: modbus.write_register
+      data:
+        hub: Solvis
+        unit: 1
+        address: 3078
+        value: 21
+    - service: modbus.write_register
+      data:
+        hub: Solvis
+        unit: 1
+        address: 3082
+        value: 80
+  - if:
+    - condition: state
+      entity_id: sensor.fbhzcontrol_mode
+      state: low
+    then:
+    - service: modbus.write_register
+      data:
+        hub: Solvis
+        unit: 1
+        address: 3078
+        value: 19
+    - service: modbus.write_register
+      data:
+        hub: Solvis
+        unit: 1
+        address: 3082
+        value: 60
+  - service: mqtt.publish
+    data:
+      topic: FBHZcontrol/mode "{{ states('sensor.fbhzcontrol_mode') }}"
+  mode: restart
+daylogs:
+  alias: Daylogs
+  sequence:
+  - service: input_number.set_value
+    target:
+      entity_id: input_number.solar_energy_sum_total_daylog
+    data:
+      value: '{{ states(''sensor.solar_energy_sum_day'') |float}}'
+  - service: input_number.set_value
+    target:
+      entity_id: input_number.grid_energy_sum_daylog
+    data:
+      value: '{{ states(''sensor.grid_energy_sum_day'') |float}}'
+  - service: input_number.set_value
+    target:
+      entity_id: input_number.water_daylog
+    data:
+      value: '{{ states(''sensor.water_today'') |float}}'
+  - service: input_number.set_value
+    target:
+      entity_id: input_number.gas_energy_daylog
+    data:
+      value: '{{ states(''sensor.gas_energy_today'') |float}}'
+  - service: input_number.set_value
+    target:
+      entity_id: input_number.solarthermie_energy_daylog
+    data:
+      value: '{{ states(''sensor.solarthermie_energy_day'') |float}}'
+  - service: input_number.set_value
+    target:
+      entity_id: input_number.electricity_energy_daylog
+    data:
+      value: '{{ states(''sensor.electricity_energy_today'') |float}}'
+  mode: single
+pool_gas_38_grad:
+  alias: Pool Gas 38 Grad
+  sequence:
+  - action: number.set_value
+    metadata: {}
+    data:
+      value: '38'
+    target:
+      entity_id: number.poolcontrol_solltemperatur_poolpumpe
+    alias: Solltemperatur
+  - action: select.select_option
+    metadata: {}
+    data:
+      option: Gas
+    target:
+      entity_id: select.poolcontrol_heizmodus_automatik
+    alias: Heizmodus
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.poolcontrol_relais_pool_pumpe
+    alias: Poolpumpe
+  description: ''
+  icon: mdi:gas-burner
+pool_gas_39_grad:
+  alias: Pool Gas 39 Grad
+  sequence:
+  - alias: Solltemperatur
+    action: number.set_value
+    metadata: {}
+    data:
+      value: '39'
+    target:
+      entity_id: number.poolcontrol_solltemperatur_poolpumpe
+  - action: select.select_option
+    metadata: {}
+    data:
+      option: Gas
+    target:
+      entity_id: select.poolcontrol_heizmodus_automatik
+    alias: Heizmodus
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.poolcontrol_relais_pool_pumpe
+    alias: Poolpumpe
+  description: ''
+  icon: mdi:gas-burner
+pool_aus:
+  alias: Pool Aus
+  sequence:
+  - alias: Solltemperatur
+    action: number.set_value
+    metadata: {}
+    data:
+      value: '33'
+    target:
+      entity_id: number.poolcontrol_solltemperatur_poolpumpe
+  - alias: Heizmodus
+    action: select.select_option
+    metadata: {}
+    data:
+      option: 'Off'
+    target:
+      entity_id: select.poolcontrol_heizmodus_automatik
+  - alias: Poolpumpe
+    action: switch.turn_off
+    target:
+      entity_id:
+      - switch.poolcontrol_relais_pool_pumpe
+    data: {}
+  description: ''
+  icon: mdi:pump-off
+pool_pumpe_umschalten:
+  alias: Pool Pumpe Umschalten
+  sequence:
+  - action: switch.toggle
+    target:
+      entity_id: switch.poolcontrol_relais_pool_pumpe
+    data: {}
+  description: ''
+  icon: mdi:pump

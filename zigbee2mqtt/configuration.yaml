@@ -1,0 +1,141 @@
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://core-mosquitto:1883
+  keepalive: 60
+  reject_unauthorized: true
+  version: 4
+  force_disable_retain: false
+  user: addons
+  password: obahphahpaetov4ooHeeg1quu6ooGhee5aeP3thoolenahfaoxooy6Aigo0zooWu
+serial:
+  port: /dev/ttyACM0
+  adapter: deconz
+frontend:
+  enabled: true
+  port: 8099
+advanced:
+  network_key:
+    - 130
+    - 215
+    - 140
+    - 126
+    - 60
+    - 20
+    - 186
+    - 97
+    - 192
+    - 132
+    - 180
+    - 141
+    - 112
+    - 20
+    - 114
+    - 238
+  log_level: info
+  channel: 25
+devices:
+  '0x7cb03eaa0a014246':
+    friendly_name: SD3
+  '0x0017880104b6d7c5':
+    friendly_name: motion_fluroben
+  '0x0017880104b71c94':
+    friendly_name: Bewegungsmelder_Gartenhaus
+  '0x7cb03eaa0a029800':
+    friendly_name: SD2
+  '0x00124b0029111f08':
+    friendly_name: motion_terrasse
+  '0x7cb03eaa0a068242':
+    friendly_name: SD1
+  '0x7cb03eaa0a0291ef':
+    friendly_name: SD4
+  '0x7cb03eaa00b2806a':
+    friendly_name: SD6
+  '0x7cb03eaa0a069dbe':
+    friendly_name: SD_x
+  '0x00124b002a65516d':
+    friendly_name: Flur_TempHumidity
+  '0xa4c1389ceadf9db0':
+    friendly_name: SD8
+  '0xa4c1389ad4e29ff9':
+    friendly_name: SD9
+  '0xa4c138f1cd611e76':
+    friendly_name: SD10
+  '0xa4c1388cc6a49469':
+    friendly_name: SD11
+  '0xa4c13809599b2496':
+    friendly_name: SD12
+  '0xa4c138339cf2f60e':
+    friendly_name: SD14
+  '0x00124b0029333ed3':
+    friendly_name: AzAntje_TempHum
+  '0x00124b0024ce6b42':
+    friendly_name: Fensterkontakt_BadKeller
+  '0x001788010b098a23':
+    friendly_name: motion_esszimmer
+  '0x00124b002a659fdf':
+    friendly_name: Contact Rainsensor
+  '0x00124b002a50aa64':
+    friendly_name: Contact Partykeller Fenster2
+  '0x00124b002a651ddb':
+    friendly_name: Contact Gästezimmer Fenster
+  '0x00158d000a98b3ac':
+    friendly_name: Watersensor Keller
+  '0xa4c1382df28c3951':
+    friendly_name: SD15
+  '0xa4c138f5a8260d90':
+    friendly_name: SD16
+  '0xa4c138926a8f570e':
+    friendly_name: SD17
+  '0xa4c138e0d283d62c':
+    friendly_name: SD19
+  '0xa4c1380355d6bc5d':
+    friendly_name: SD20
+  '0xa4c1382c7f82d4ed':
+    friendly_name: SD21
+  '0xa4c138d32ee17e64':
+    friendly_name: SD22
+  '0xa4c138dcff915666':
+    friendly_name: Contact Schuppen vorne
+  '0xa4c138d63e4dce4d':
+    friendly_name: Contact Schuppen hinten
+  '0xd0cf5efffec80e27':
+    friendly_name: Wz_LowLight2
+  '0xf0d1b80000146ced':
+    friendly_name: Wz_LowLight1
+  '0x000b57fffe9f6aae':
+    friendly_name: Flurunten_Licht
+  '0x84182600000f65e7':
+    friendly_name: GartenhausRechts_Licht
+  '0xb43522fffe736230':
+    friendly_name: Repeater_Terrasse
+  '0x7cc6b6fffe49a74b':
+    friendly_name: Repeater Hof
+  '0x7cb03eaa0a03a3d1':
+    friendly_name: Kellertreppe_Licht
+  '0x84182600000f892b':
+    friendly_name: GartenhausLinks_Licht
+  '0x7cb03eaa00b24a34':
+    friendly_name: Terrassenfeuer
+  '0x7cb03eaa0a06edb6':
+    friendly_name: Fluroben_Licht
+  '0xa4c138f60fafa365':
+    friendly_name: presence_kueche
+  '0x54ef441000851844':
+    friendly_name: Klima_Keller
+  '0xa4c1383d4bd08094':
+    friendly_name: SD18
+  '0x7cb03eaa0a06898e':
+    friendly_name: Poolfeuer
+  '0x7cb03eaa00ab18a8':
+    friendly_name: GartenlichterHinten
+  '0x00178801094a23ed':
+    friendly_name: Bewegungsmelder Kellertreppe
+  '0xa4c138f85077d7f8':
+    friendly_name: Plug_Solar
+  '0xa4c13806e0387fa6':
+    friendly_name: SD13
+homeassistant:
+  enabled: true
+version: 5
+availability:
+  enabled: true

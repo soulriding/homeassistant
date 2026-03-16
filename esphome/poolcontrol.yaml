@@ -1,0 +1,508 @@
+
+substitutions:
+  name1: pump
+  name2: solarvalve
+  name3: heatpump
+  name4: gardenpump
+  clientname: poolcontrol
+
+esphome:
+  name: ${clientname}
+  friendly_name: PoolControl
+
+esp8266:
+  board: esp12e
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "enMp0IP+kx7HhjFWdCEsfLSBJm4L13kOaLhxWOaFtnU="
+
+ota:
+ - platform: esphome
+   password: "8392905091f98eb440784b017dcb8dda"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  reboot_timeout: 0s
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ${clientname}
+    password: "krokodilrotze"
+
+captive_portal:
+
+mqtt:
+  broker: 192.168.82.30
+  client_id: ${clientname}
+  reboot_timeout: 0s
+  username: Diggler
+  password: surfforlife
+  discovery: false
+  discovery_retain: false
+
+web_server:
+  port: 80
+  ota: false
+  
+
+# Time for turn-off-timer in minutes 
+
+number:
+  - platform: template
+    name: "Time Gartenpumpe"
+    id: time_gardenpump
+    state_topic: ${clientname}/duration_gardenpump
+    command_topic: ${clientname}/setduration_gardenpump
+    optimistic: true
+    initial_value: 180
+    min_value: 5
+    max_value: 600
+    step: 5
+    unit_of_measurement: "min"
+  - platform: template
+    name: "Solltemperatur Poolpumpe"
+    id: temp_pool_setpoint
+    state_topic: ${clientname}/temp_PoolSetpoint
+    command_topic: ${clientname}/settemp_PoolSetpoint
+    optimistic: true
+    initial_value: 33
+    min_value: 1
+    max_value: 42
+    step: 1
+    unit_of_measurement: "°C"
+  - platform: template
+    name: "Gas Fehlzündungen Zähler"
+    id: count_gasfail
+    state_topic: ${clientname}/count_gasfail
+    command_topic: ${clientname}/setcount_gasfail
+    optimistic: true
+    initial_value: 0
+    min_value: 0
+    max_value: 100
+    step: 1
+  - platform: template
+    name: "Pumpenlaufzeit Pool"
+    id: duration_pump
+    state_topic: ${clientname}/duration_pump
+    command_topic: ${clientname}/setduration_pump
+    optimistic: true
+    initial_value: 0
+    min_value: 0
+    max_value: 1440
+    step: 1
+    unit_of_measurement: "min"
+
+# Use the blue LED in the device as a status LED, which will blink if there are warnings (slow) or errors (fast)
+#status_led:
+#  pin:
+#    number: GPIO5
+#    inverted: True
+
+# ================= RELAYS ==========================
+switch:
+  - platform: gpio
+    pin: GPIO16
+    name: "Relais Pool Pumpe"
+    id: relay_pump
+    state_topic: ${clientname}/relay_pump
+    command_topic: ${clientname}/setrelay_pump
+  - platform: gpio
+    pin: GPIO14
+    name: "Relais Solarventil"
+    id: relay_solarvalve
+    state_topic: ${clientname}/relay_solarvalve
+    command_topic: ${clientname}/setrelay_solarvalve
+  - platform: gpio
+    pin: GPIO12
+    name: "Relais Heizpumpe"
+    id: relay_heatpump
+    state_topic: ${clientname}/relay_heatpump
+    command_topic: ${clientname}/setrelay_heatpump
+  - platform: gpio
+    pin: GPIO13
+    name: "Relais Gartenpumpe"
+    id: relay_gardenpump
+    state_topic: ${clientname}/relay_gardenpump
+    command_topic: ${clientname}/setrelay_gardenpump
+    on_turn_on:
+      then:
+        - script.stop: timer_gardenpump
+        - script.execute: timer_gardenpump
+    on_turn_off:
+    - script.stop: timer_gardenpump
+
+# ================= TRIGGERS ==========================
+  - platform: template
+    id: trigger_gardenpump
+    name: "Trigger Gartenpumpe"
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    command_topic: ${clientname}/trigger_gardenpump
+    on_turn_on:
+      then:
+        - switch.turn_on: relay_gardenpump
+        - script.stop: timer_gardenpump
+        - script.execute: timer_gardenpump
+        - delay: 100ms
+        - switch.turn_off: trigger_gardenpump
+
+# ================= SWITCHES ==========================
+  - platform: template
+    name: "Automatik Solarheizung"
+    id: sw_solarautomatic
+    state_topic: ${clientname}/Solarautomatic
+    command_topic: ${clientname}/setSolarautomatic
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+  - platform: template
+    name: "Automatik Gasheizung"
+    id: sw_gasautomatic
+    state_topic: ${clientname}/Gasautomatic
+    command_topic: ${clientname}/setGasautomatic
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+  - platform: template
+    name: "Automatik Holzheizung"
+    id: sw_woodautomatic
+    state_topic: ${clientname}/Woodautomatic
+    command_topic: ${clientname}/setWoodautomatic
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+  - platform: template
+    name: "Automatik Reinigungspumpen"
+    id: sw_cleanautomatic
+    state_topic: ${clientname}/Cleanautomatic
+    command_topic: ${clientname}/setCleanautomatic
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+  - platform: template
+    name: "Automatik Frostschutz"
+    id: sw_freezeautomatic
+    state_topic: ${clientname}/Freezeautomatic
+    command_topic: ${clientname}/setFreezeautomatic
+    restore_mode: RESTORE_DEFAULT_ON
+    optimistic: true
+
+select:
+  - platform: template
+    name: "Heizmodus Automatik"
+    id: select_automatic
+    optimistic: true
+    options:
+      - "Off"
+      - "Solar"
+      - "Gas"
+      - "Wood"
+    initial_option: "Off"
+    on_value:
+      then:
+        - lambda: |-
+            if (std::string_view(id(select_automatic).current_option()) == "Off") {
+            id(sw_solarautomatic).publish_state(false);
+            id(sw_gasautomatic).publish_state(false);
+            id(sw_woodautomatic).publish_state(false);
+            id(relay_pump).publish_state(false);
+            id(relay_solarvalve).publish_state(false);
+            id(relay_heatpump).publish_state(false);
+            } else if (std::string_view(id(select_automatic).current_option()) == "Solar") {
+            id(sw_solarautomatic).publish_state(true);
+            id(sw_gasautomatic).publish_state(false);
+            id(sw_woodautomatic).publish_state(false);
+            id(relay_heatpump).publish_state(false);
+            } else if (std::string_view(id(select_automatic).current_option()) == "Gas") {
+            id(sw_solarautomatic).publish_state(false);
+            id(sw_gasautomatic).publish_state(true);
+            id(sw_woodautomatic).publish_state(false);
+            id(relay_solarvalve).publish_state(false);
+            } else if (std::string_view(id(select_automatic).current_option()) == "Wood") {
+            id(sw_solarautomatic).publish_state(false);
+            id(sw_gasautomatic).publish_state(false);
+            id(sw_woodautomatic).publish_state(true);
+            id(relay_solarvalve).publish_state(false);
+            id(relay_heatpump).publish_state(false);
+            }
+
+  
+# ================= TRIGGER-SCRIPTS ==========================
+script:
+  - id: timer_gardenpump
+    then:
+      - delay: !lambda "return id(time_gardenpump).state * 1000 * 60;"
+      - switch.turn_off: relay_gardenpump
+  - id: timer_Freezeautomatic
+    then:
+      - delay: !lambda "return 150 * 1000;"
+      - switch.turn_off: relay_heatpump
+      - switch.turn_off: relay_pump
+  - id: timer_Cleanautomatic
+    then:
+      - delay: !lambda "return 30 * 1000 * 60;"
+      - switch.turn_off: relay_heatpump
+      - switch.turn_off: relay_pump
+
+# ================= SENSORS ==========================
+
+one_wire:
+  - platform: gpio
+    pin: 5
+
+
+    #address: 0x3b02183355edff28, address: 0x32000006c7b3c428
+
+sensor:
+
+  - platform: dallas_temp
+    address: 0x98011833883fff28
+    name: "Temp Pool"
+    id: temp_pool
+    state_topic: ${clientname}/tempPool
+  - platform: dallas_temp
+    address: 0x1b00000050deac28
+    name: "Temp Pool In"
+    id: temp_pool_in
+    state_topic: ${clientname}/tempPoolIn
+  - platform: dallas_temp
+    address: 0x40011833bb09ff28
+    name: "Temp Pool Out"
+    id: temp_pool_out
+    state_topic: ${clientname}/tempPoolOut
+  - platform: dallas_temp
+    address: 0xa0020d9245042f28
+    name: "Temp Pool Solar"
+    id: temp_pool_solar
+    state_topic: ${clientname}/tempPoolSolar
+  - platform: dallas_temp
+    address: 0x5500000053eeed28
+    name: "Temp Pool Ofen"
+    id: temp_pool_oven
+    state_topic: ${clientname}/tempPoolOven
+  - platform: dallas_temp
+    address: 0x03000006c6c56a28
+    name: "Temp Pool Housing"
+    id: temp_pool_housing
+    state_topic: ${clientname}/tempPoolHousing
+  - platform: dallas_temp
+    address: 0x42011833bb76ff28
+    name: "Temp Pump Haus"
+    id: temp_pump_house
+    state_topic: ${clientname}/tempPumphouse
+
+
+  - platform: mqtt_subscribe
+    name: "AhStored"
+    id: ahstored
+    topic: /home/AhStored
+    unit_of_measurement: "Ah"
+
+  - platform: mqtt_subscribe
+    name: "SOC_BMS"
+    id: soc_bms
+    topic: 24VSpeicher_BMS/24VSpeicher_BMS/Pack SOC
+    unit_of_measurement: "%"
+
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    id: wifi_signal_percent
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+
+  - platform: template
+    id: control_pool
+    name: "Poolregelung"
+    lambda: |-
+      // INIT POOLREGELUNG
+      bool pumpstate = id(relay_pump).state ;
+      bool solarvalve = id(relay_solarvalve).state ;
+      bool heatpump = id(relay_heatpump).state ;
+      float solltemp = id(temp_pool_setpoint).state;                           // Solltemperatur Pool
+      int returnval = 0;
+
+      // SOLARREGLER
+      if (id(sw_solarautomatic).state and (not id(sw_gasautomatic).state)) {
+        if( (id(temp_pool_solar).state > id(temp_pool).state + 5) and (id(temp_pool).state < id(temp_pool_setpoint).state -0.2)){
+          pumpstate = 1;
+          solarvalve = 1;
+          returnval = 1;
+        }
+        else if ( (id(temp_pool_out).state > id(temp_pool_in).state - 0.05) and id(relay_pump).state){
+          solarvalve = 0;
+          if (not(id(soc_bms).state >= 100)) {pumpstate = 0;};
+          returnval = 2;
+        }
+        else if ( (id(temp_pool_solar).state < id(temp_pool_out).state + 1) and id(relay_pump).state){
+          solarvalve = 0;
+          if (not(id(soc_bms).state >= 100)) {pumpstate = 0;};
+          returnval = 3;
+        }
+        else if ( (id(temp_pool).state > id(temp_pool_setpoint).state + 0.2) and id(relay_pump).state){
+          solarvalve = 0;
+          if (not(id(soc_bms).state >= 100)) {pumpstate = 0;};
+          returnval = 4;
+        }
+      }
+
+      // GASHEIZREGLER
+      if (id(sw_gasautomatic).state) {
+        if( (id(temp_pool).state < id(temp_pool_setpoint).state - 0.2) and (id(count_gasfail).state < 10) and (not id(relay_heatpump).state)){
+          pumpstate = 1;
+          solarvalve = 0;
+          heatpump = 1;
+          returnval = 5;
+        }
+        else if ( (id(temp_pool).state > id(temp_pool_setpoint).state + 0.2) and id(relay_heatpump).state ){
+          pumpstate = 0;
+          solarvalve = 0;
+          heatpump = 0;
+          // PoolGasFailIgnitionCount = 0 setzen und Pushover senden
+          if ( id(count_gasfail).state > 0 ){
+            auto call = id(count_gasfail).make_call();
+            call.set_value(0);
+            call.perform();
+            //  Pushover info zurückgesetzt senden
+            };
+          returnval = 6;
+        }
+        else if ( (id(temp_pool_out).state > id(temp_pool_in).state - 0) and id(relay_heatpump).state){
+          pumpstate = 0;
+          heatpump = 0;
+          //Pushover-Update + 1
+          auto call = id(count_gasfail).make_call();
+          call.number_increment(true);
+          call.perform();
+          //  Pushover info Count senden
+          returnval = 7;
+        }
+        //else if ( (id(temp_pool).state < id(temp_pool_oven).state - 2) and (not id(sw_gasautomatic).state) and (not id(relay_heatpump).state)){
+        //  Pool Pumpe für 90 sekunden anschalten
+        //  returnval = 8;
+        //}
+      }
+      
+      // FROSTSCHUTZ
+      if (id(sw_freezeautomatic).state and std::min({id(temp_pool_out).state, id(temp_pool_in).state, id(temp_pool).state, id(temp_pump_house).state, id(temp_pool_oven).state}) < 0 ) {
+          // timer Poolpume 250s
+          pumpstate = 1;
+          //id(relay_pump).turn_on();
+          //id(timer_Freezeautomatic).stop();
+          //id(timer_Freezeautomatic).execute();
+          returnval = 9;
+        if( id(temp_pump_house).state < 2 and (id(temp_pool).state < 6 or id(temp_pump_house).state <0.5 ) and id(sw_gasautomatic).state){
+          // timer Poolpume 150s
+          pumpstate = 1;
+          heatpump = 1;
+          //id(relay_pump).turn_on();
+          //id(relay_heatpump).turn_on();
+          //id(timer_Freezeautomatic).stop();
+          //id(timer_Freezeautomatic).execute();
+          returnval = 10;
+        }
+      }
+
+      // RELAY-UPDATING
+      if (pumpstate){
+        id(relay_pump).turn_on();
+        }
+      else {
+        id(relay_pump).turn_off();
+        }
+      if (solarvalve){
+        id(relay_solarvalve).turn_on();
+        }
+      else {
+        id(relay_solarvalve).turn_off();
+        }
+      if (heatpump){
+        id(relay_heatpump).turn_on();
+        }
+      else {
+        id(relay_heatpump).turn_off();
+        }
+      if (returnval == 9){
+        id(timer_Freezeautomatic).stop();
+        id(timer_Freezeautomatic).execute();
+        }
+      if (returnval == 10){
+        id(timer_Freezeautomatic).stop();
+        id(timer_Freezeautomatic).execute();
+        }
+
+      if (id(relay_pump).state){
+        auto call = id(duration_pump).make_call();
+        call.number_increment(true);
+        call.perform();
+        }
+      
+    
+
+      return returnval;
+    update_interval: 60s
+
+text_sensor:
+
+# WIFI-Status
+  - platform: wifi_info
+    ip_address:
+      name: Wifi IP Address
+    ssid:
+      name: Wifi Connected SSID
+      id: ssid_name
+    #bssid:
+    #  name: ESP Connected BSSID
+    #mac_address:
+    #  name: ESP Mac Wifi Address
+    scan_results:
+      #name: ESP Latest Scan Results
+      id: wifi_scan_results
+
+# Uhrzeit
+  - platform: template
+    #name: "Stunden Minuten"
+    lambda: |-
+      auto time = id(sntp_time).now().strftime("%H:%M");
+      return {time};
+    id: tpl_hour_sec
+    update_interval: 60s
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Berlin
+    servers:
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
+      - 2.pool.ntp.org
+    on_time:
+    - seconds: 0
+      minutes: 30
+      hours: 20
+      then:
+       - lambda: |-
+            if( id(sw_cleanautomatic).state and (id(temp_pool).state > 17) and (id(duration_pump).state < 30) ){
+              id(relay_pump).turn_on();
+              id(timer_Cleanautomatic).stop();
+              id(timer_Cleanautomatic).execute();
+            }
+    - seconds: 59
+      minutes: 59
+      hours: 23
+      then:
+       - number.to_min: duration_pump
+
+button:
+  - platform: restart
+    name: "Restart Button"

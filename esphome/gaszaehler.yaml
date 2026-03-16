@@ -1,0 +1,69 @@
+esphome:
+  name: gaszaehler
+  friendly_name: Gaszaehler
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "AmrkGmGF9CJiPZ5ZXWxVZFT0t0nKu2j1URj+zw3ohgE="
+
+ota:
+  - platform: esphome
+    password: "2be067db43036ad21c25fb0ad28d550b"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Gaszaehler Fallback Hotspot"
+    password: "WWJSZvoE0e8E"
+
+captive_portal:
+    
+globals:
+  - id: total_pulses
+    type: int
+    restore_value: true
+    
+binary_sensor:
+  - platform: gpio
+    id: internal_pulse_counter
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+    name: "Live-Impuls"
+    filters:
+      - delayed_on: 10ms
+    on_press:
+      then:
+        - lambda: id(total_pulses) += 1;
+        - output.turn_off: led  # für die LED, zur Anzeige des Schaltvorgangs
+    on_release:
+      then:
+        - output.turn_on: led  # für die LED, zur Anzeige des Schaltvorgangs
+        
+sensor: 
+  - platform: template
+    name: "Gas Volume"
+    device_class: gas
+    unit_of_measurement: "m³"
+    state_class: "total_increasing"
+    icon: "mdi:fire"
+    accuracy_decimals: 3
+    lambda: |-
+      return id(total_pulses) * 0.01;
+      
+# Diese LED blinkt, wenn ein Signal vom Reedkontakt erkannt wird
+output:
+  - platform: gpio # Die interne LED auf dem Board
+    pin: GPIO2
+    id: 'led'
+    inverted: true

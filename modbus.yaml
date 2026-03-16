@@ -1,0 +1,302 @@
+# https://smarthome.ms1.de/projekte/solvis-heizung/
+
+#modbus:
+- name: Solvis
+  type: tcp
+  host: 192.168.82.34
+  port: 502
+  sensors:
+    - name: SV Warmwasserpuffer
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33024
+      scan_interval: 30
+
+    - name: SV Warmwassertemperatur
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33025
+      scan_interval: 30
+
+    - name: SV Speicherreferenztemperatur
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33026
+      scan_interval: 30
+
+    - name: SV Heizungspuffertemperatur oben
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33027
+      scan_interval: 30
+
+    - name: SV Aussentemperatur
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33033
+      scan_interval: 30
+
+    - name: SV Heizungspuffertemperatur unten
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33032
+      scan_interval: 30
+
+    - name: SV Zirkulationsdurchfluss
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33034
+      scan_interval: 30
+
+    - name: SV Vorlauftemperatur HK1
+      unique_id: "sv_vorlauftemperature_hk1"
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33035
+      scan_interval: 30
+
+    - name: SV Vorlauftemperatur HK2
+      unique_id: "sv_vorlauftemperature_hk2"
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33036
+      scan_interval: 30
+
+    - name: SV Kaltwassertemperatur
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      precision: 2
+      input_type: input
+      address: 33038
+      scan_interval: 30
+
+    - name: SV Durchfluss Warmwasserzirkualation
+      unit_of_measurement: l/min
+      slave: 1
+      precision: 2
+      scale: 0.1
+      input_type: input
+      address: 33041
+      scan_interval: 30
+
+    - name: SV Laufzeit Brenner
+      unit_of_measurement: h
+      slave: 1
+      precision: 0
+      input_type: input
+      address: 33536
+      scan_interval: 30
+
+    - name: SV Brennerstarts
+      unit_of_measurement: Starts
+      slave: 1
+      precision: 0
+      input_type: input
+      address: 33537
+      scan_interval: 30
+
+    - name: SV Brennerleistung
+      unit_of_measurement: kW
+      scale: 0.1
+      slave: 1
+      precision: 1
+      input_type: input
+      address: 33539
+      scan_interval: 30
+
+    - name: SV Ionisationsstrom
+      unit_of_measurement: mA
+      slave: 1
+      scale: 0.1
+      precision: 1
+      input_type: input
+      address: 33540
+      scan_interval: 30
+
+    - name: SV A01.Pumpe Zirkulation
+      slave: 1
+      unit_of_measurement: V
+      scale: 0.01
+      precision: 0
+      input_type: input
+      address: 33280
+      scan_interval: 30
+
+    - name: SV A02.Pumpe Warmwasser
+      slave: 1
+      unit_of_measurement: V
+      scale: 0.01
+      precision: 0
+      input_type: input
+      address: 33281
+      scan_interval: 30
+
+    - name: SV A03.Pumpe HK1
+      slave: 1
+      unit_of_measurement: V
+      scale: 0.01
+      precision: 0
+      input_type: input
+      address: 33282
+      scan_interval: 30
+
+    - name: SV A05.Pumpe Zirkulation
+      slave: 1
+      unit_of_measurement: V
+      scale: 0.01
+      precision: 0
+      input_type: input
+      address: 33284
+      scan_interval: 30
+
+    - name: SV A12.Brennerstatus
+      slave: 1
+      unit_of_measurement: V
+      scale: 0.01
+      precision: 0
+      input_type: input
+      address: 33291
+      scan_interval: 30
+
+    - name: SV WW Nachheizung 2322
+      slave: 1
+      #unit_of_measurement: V
+      #scale: 0.01
+      #precision: 0
+      input_type: holding
+      address: 2322
+      scan_interval: 30
+
+    - name: SV HKR1 Betriebsart
+      slave: 1
+      input_type: holding
+      address: 2818
+      scan_interval: 30
+
+    - name: SV HKR2 Betriebsart
+      slave: 1
+      input_type: holding
+      address: 3074
+      scan_interval: 30
+
+    # ab hier 300 Sekunden Poll Interval
+
+    - name: SV HKR1 Absenktemperatur Nacht
+      unit_of_measurement: °C
+      slave: 1
+      input_type: holding
+      address: 2821
+      scan_interval: 300
+
+    - name: SV HKR1 Solltemperatur Tag
+      unit_of_measurement: °C
+      slave: 1
+      input_type: holding
+      address: 2820
+      scan_interval: 300
+
+    - name: SV DigIn Stoerungen
+      slave: 1
+      input_type: input
+      address: 33045
+      scan_interval: 300
+
+    - name: SV WW Solltemperatur
+      unit_of_measurement: °C
+      slave: 1
+      input_type: holding
+      address: 2305
+      scan_interval: 300
+
+    - name: SV VersionSC2
+      slave: 1
+      scale: 0.01
+      precision: 2
+      input_type: input
+      address: 32770
+      scan_interval: 300
+
+    - name: SV VersionNBG
+      slave: 1
+      scale: 0.01
+      input_type: input
+      address: 32771
+      scan_interval: 300
+
+    - name: SV ZirkulationBetriebsart
+      slave: 1
+      input_type: input
+      address: 2049
+      scan_interval: 300
+
+    - name: SV Raumtemperatur_HKR1
+      unit_of_measurement: °C
+      scale: 0.1
+      slave: 1
+      input_type: holding
+      address: 34304
+      scan_interval: 300
+
+    - name: SV S05 Solar Temp Vorlauf
+      slave: 1
+      unit_of_measurement: °C
+      scale: 0.1
+      precision: 0
+      input_type: input
+      address: 33028
+      scan_interval: 30
+
+    - name: SV S06 Solar Temp Ruecklauf
+      slave: 1
+      unit_of_measurement: °C
+      scale: 0.1
+      precision: 0
+      input_type: input
+      address: 33029
+      scan_interval: 30
+
+    - name: SV S08 Solar Temp Kollektor
+      slave: 1
+      unit_of_measurement: °C
+      scale: 0.1
+      precision: 0
+      input_type: input
+      address: 33031
+      scan_interval: 30
+
+    - name: SV S17 Solar Volumenstrom
+      slave: 1
+      unit_of_measurement: l/min
+      scale: 1
+      precision: 0
+      input_type: input
+      address: 33040
+      scan_interval: 30

@@ -1,0 +1,32 @@
+esphome:
+  name: buscontrol-has
+  friendly_name: buscontrol-has
+
+esp32:
+  board: esp32-s2-saola-1
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "NGQEoygx+XoV5UWFnJldPaQuPiVnW4qvpvS3KbRmINU="
+
+ota:
+  - platform: esphome
+    password: "06e1689121e01629c6f338719cd2eb8c"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Buscontrol-Has Fallback Hotspot"
+    password: "K8uMOYC2YmfZ"
+
+captive_portal:
+    

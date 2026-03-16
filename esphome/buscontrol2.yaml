@@ -1,0 +1,951 @@
+#<<: !include secrets.yaml
+
+# =============================================== KONFIGURATION BASISFUNKTIONEN ===============================================
+esphome:
+  name: buscontrol
+
+esp32:
+  board: wemos_d1_mini32
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+  level: debug
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "wu9PtBLXVNmdSdqYnITnBF1zlwG1xS+aAKz21wBjytc="
+  reboot_timeout: 0s
+
+ota:
+  - platform: esphome
+    password: "53f0ed7b43eb4005e2ee53306447b283"
+
+wifi:
+  networks:
+  - ssid: "CasaS"
+    password: "krokodilrotze"
+  - ssid: "Fridolin"
+    password: "krokodilrotze"
+  reboot_timeout: 0s
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Fridolin Fallback Hotspot"
+    password: "krokodilrotze"
+
+captive_portal:    
+    
+mqtt:
+  broker: 192.168.82.30
+  client_id: buscontrol
+  reboot_timeout: 0s
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+  
+web_server:
+  port: 80
+  auth:
+    username: diggler
+    password: QOfj/?*K=H^^+\t#^&<F}{D"
+  ota: false
+
+#http_request:
+#  useragent: esphome/device
+#  timeout: 10s
+
+globals:
+   - id: my_energy_board_float
+     type: float
+     restore_value: yes
+     initial_value: '90'
+
+debug:
+  update_interval: 5s
+
+
+# =============================================== VARIABLE SOLLWERTE ===============================================
+
+number:
+  - platform: template
+    name: "2 Kühlschrank Solltemperatur"
+    id: tempsoll_fridge
+    optimistic: true
+    initial_value: 5
+    min_value: 3
+    max_value: 15
+    step: 1
+    state_topic: buscontrol/number/tempsoll_fridge
+    unit_of_measurement: "°C"
+  - platform: template
+    name: "2 Eisfach Solltemp"
+    id: tempsoll_freezer
+    optimistic: true
+    initial_value: -8
+    min_value: -15
+    max_value: -1
+    step: 1
+    state_topic: buscontrol/number/tempsoll_freezer
+    unit_of_measurement: "°C"
+  - platform: template
+    name: "2 Kühlen Solltemp"
+    id: tempsoll_cool
+    optimistic: true
+    initial_value: 18
+    min_value: 15
+    max_value: 25
+    step: 1
+    state_topic: buscontrol/number/tempsoll_cool
+    unit_of_measurement: "°C"
+  - platform: template
+    name: "2 Trocknen Sollfeuchte"
+    id: humiditysoll_dry
+    optimistic: true
+    initial_value: 50
+    min_value: 30
+    max_value: 80
+    step: 1
+    state_topic: buscontrol/number/humiditysoll_dry
+    unit_of_measurement: "%"
+
+  
+# =============================================== EPAPER DISPLAY ===============================================0
+
+# ---------- Deklaration Schriften -------
+font:
+  - file: "gfonts://Roboto"
+    id: normal
+    size: 34
+    glyphs:
+       ['&', '@', '!', ',', '.', '?', '"', '%', '(', ')', '+', '-', '_', ':', '°', '0',
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
+        'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+        'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+        'u', 'v', 'w', 'x', 'y', 'z','å', 'Ä', 'ä', 'Ö', 'ö', 'Ü', 'ü', '/']
+  - file: "gfonts://Roboto"
+    id: small
+    size: 12
+    glyphs:
+       ['&', '@', '!', ',', '.', '?', '"', '%', '(', ')', '+', '-', '_', ':', '°', '0',
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
+        'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+        'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+        'u', 'v', 'w', 'x', 'y', 'z','å', 'Ä', 'ä', 'Ö', 'ö', 'Ü', 'ü', '/']
+  - file: "gfonts://Roboto"
+    id: big
+    size: 40
+    glyphs:
+       ['&', '@', '!', ',', '.', '?', '"', '%', '(', ')', '+', '-', '_', ':', '°', '0',
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
+        'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+        'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+        'u', 'v', 'w', 'x', 'y', 'z','å', 'Ä', 'ä', 'Ö', 'ö', 'Ü', 'ü', '/']
+  - file: "gfonts://Roboto"
+    id: biggest
+    size: 60
+    glyphs:
+       ['&', '@', '!', ',', '.', '?', '"', '%', '(', ')', '+', '-', '_', ':', '°', '0',
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
+        'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+        'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+        'u', 'v', 'w', 'x', 'y', 'z','å', 'Ä', 'ä', 'Ö', 'ö', 'Ü', 'ü', '/']
+
+# --------- Deklaration Icons --------
+# https://github.com/Templarian/MaterialDesign-Webfont/blob/master/fonts/materialdesignicons-webfont.ttf
+  - file: "fonts//materialdesignicons-webfont.ttf"
+    id: icons
+    size: 60
+    glyphs: [
+      "\U000F028F", # fridge-outline
+      "\U000F0210", # fan
+      "\U000F0438", # radiator
+      "\U000F06E9", # lightbulb-on-outline
+      "\U000F11B0", # fridge-off-outline
+      "\U000F081D", # fan-off
+      "\U000F0AD8", # radiator-off
+      "\U000F0E50", # lightbulb-off-outline
+      "\U000F010C", # car-battery
+      "\U000F1902", # home-battery-outline
+      "\U000F050F", # thermometer
+      "\U000F05A9", # wifi
+      "\U000F05AA", # wifi-off
+      ]
+  - file: "fonts//materialdesignicons-webfont.ttf"
+    id: iconssmall
+    size: 50
+    glyphs: [
+      "\U000F1A71", # snowflake-thermometer
+      "\U000F010C", # car-battery
+      "\U000F1902", # home-battery-outline
+      ]
+
+# ------------- Ansteuerung EPAPER ----------------
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+
+display:
+  - platform: waveshare_epaper
+    id: screen
+    cs_pin: GPIO5
+    dc_pin: GPIO19
+    reset_pin: GPIO12
+    model: 4.20in
+    reset_duration: 200ms
+    rotation: 180
+    #full_update_every: 30
+    update_interval: 60s
+    auto_clear_enabled: true
+    lambda: |-
+      // ICONS
+      if(id(fridge_control).state or id(freezer_control).state){
+        it.print(25, 0, id(icons), "\U000F028F"); //fridge
+        }
+      else{
+        it.print(25, 0, id(icons), "\U000F11B0"); //fridge off
+        }
+      if(id(cool_control).state or id(dry_control).state){
+        it.print(125, 0, id(icons), "\U000F0210"); //fan
+        }
+      else{
+        it.print(125, 0, id(icons), "\U000F081D"); //fan off
+        }
+      if(id(heat_control).state){
+        it.print(225, 0, id(icons), "\U000F0438"); //radiator
+        }
+      else
+        {
+        it.print(225, 0, id(icons), "\U000F0AD8"); //radiator off
+        }
+      if(id(wifi_control).state){
+        it.print(325, 0, id(icons), "\U000F05A9"); //wifi
+        }
+      else{
+        it.print(325, 0, id(icons), "\U000F05AA"); //wifi off
+        }
+      
+      // ICON-Unterschriften
+      if(id(freezer_control).state){it.printf(50, 60, id(small), TextAlign::TOP_CENTER, "Soll:%.1f°C", id(tempsoll_freezer).state);};
+      if(id(fridge_control).state){it.printf(50, 75, id(small), TextAlign::TOP_CENTER, "Soll:%.1f°C", id(tempsoll_fridge_dynamic).state);};
+      if(id(cool_control).state){it.printf(150, 60, id(small), TextAlign::TOP_CENTER, "Soll:%.1f°C", id(tempsoll_cool).state);};
+      it.printf(250, 60, id(small), TextAlign::TOP_CENTER, "vorn: %.1f°C", id(temp_in_front).state);
+      it.printf(250, 75, id(small), TextAlign::TOP_CENTER, "hinten: %.1f°C", id(temp_in_back).state);
+      
+      // TEMPERATUREN
+      it.line(0, 95, 400, 95);
+      // KÜHLSCHRANK
+      it.print(0, 130, id(iconssmall), "\U000F1A71"); //fridge
+      it.printf(90, 125, id(small), TextAlign::TOP_CENTER, "%.1f°C", id(temp_freezer).state);
+      it.printf(90, 135, id(normal), TextAlign::TOP_CENTER, "%.1f°", id(temp_fridge).state);
+      //INNEN/AUSSEN
+      it.printf(220, 105, id(big), TextAlign::TOP_CENTER, "%.0f%%", id(humidity_in_dht).state);
+      it.printf(320, 105, id(big), TextAlign::TOP_CENTER, "%.1f°", id(temp_in_door).state);
+      it.printf(220, 150, id(big), TextAlign::TOP_CENTER, "%.0f%%", id(humidity_out_dht).state);   
+      it.printf(320, 150, id(big), TextAlign::TOP_CENTER, "%.1f°", id(temp_out).state);
+      it.printf(155, 175, id(small), TextAlign::TOP_LEFT, "%.0f%%", id(humidity_out_virtual).state);
+      it.printf(380, 130, id(small), TextAlign::CENTER, "IN");
+      it.printf(380, 180, id(small), TextAlign::CENTER, "OUT");
+      
+      // BATTERIE
+      it.line(0, 200, 400, 200);
+      it.line(110, 200, 110, 300);
+      it.line(200, 200, 200, 300);
+      
+      it.print(130, 205, id(iconssmall), "\U000F010C"); //battery
+      it.printf(180, 260, id(normal), TextAlign::TOP_RIGHT, "%.1f", id(batt_start_voltage).state);
+      it.printf(180, 265, id(small), TextAlign::TOP_LEFT, "V");
+      it.print(220, 205, id(iconssmall), "\U000F1902"); //board battery
+      it.printf(275, 260, id(normal), TextAlign::TOP_RIGHT, "%.1f", id(batt_board_voltage).state);
+      it.printf(275, 265, id(small), TextAlign::TOP_LEFT, "V");
+      it.printf(360, 205, id(big), TextAlign::TOP_RIGHT, "%.1f", id(batt_board_current).state);
+      it.printf(360, 210, id(small), TextAlign::TOP_LEFT, "A");
+      it.printf(360, 250, id(big), TextAlign::TOP_RIGHT, "%.0f", id(my_energy_board_float));
+      it.printf(360, 255, id(small), TextAlign::TOP_LEFT, "Ah");
+      
+      // ICON-Unterschriften
+      it.printf(75, 280, id(small), TextAlign::TOP_LEFT, "%.0f%%", id(wifi_signal_percent).state);
+      std::string ssid_string = id(ssid_name).state;
+      it.printf(10, 280, id(small), TextAlign::TOP_LEFT, "%s", ssid_string.c_str());
+      std::string tpl_hour_sec_string = id(tpl_hour_sec).state;
+      it.printf(5, 200, id(big), TextAlign::TOP_LEFT, "%s", tpl_hour_sec_string.c_str());
+      
+
+
+# =============================================== VIRTUELLE SCHALTER ===============================================
+switch:
+  - platform: template
+    name: "1 Kühlschrank"
+    id: fridge_control
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - component.update: screen
+    #- http_request.post:
+    #    url: https://api.pushover.net
+    #    headers:
+    #      Content-Type: application/json
+    #    verify_ssl: false
+    #    json:
+    #      user: "ut5mQftDg1PrgTHyKfHPg1ifrRcAn4"
+    #      token: "acud6y1qbwc13kngse6bgk29aqqp2j"
+    #      message: "Kühlschrank eingeschaltet!"
+    #      url: "fridolinbus.dynv6.net"
+    on_turn_off:
+    - component.update: screen
+    state_topic: buscontrol/switch/fridge_control
+  - platform: template
+    name: "1 Eisfach"
+    id: freezer_control
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - component.update: screen
+    on_turn_off:
+    - component.update: screen
+    state_topic: buscontrol/switch/freezer_control
+  - platform: template
+    name: "1 Kühlung"
+    id: cool_control
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - component.update: screen
+    on_turn_off:
+    - component.update: screen
+  - platform: template
+    name: "1 Entfeuchtung"
+    id: dry_control
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - component.update: screen
+    on_turn_off:
+    - component.update: screen
+    state_topic: buscontrol/switch/dry_control
+  - platform: template
+    name: "1 Heizung"
+    id: heat_control
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - component.update: screen
+    - switch.turn_on: relais_heating # Relais Heizung direkt an
+    on_turn_off:
+    - component.update: screen
+    - switch.turn_off: relais_heating # Relais Heizung direkt aus
+  - platform: template
+    name: "1 Beleuchtung"
+    id: light_control
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - component.update: screen
+    on_turn_off:
+    - component.update: screen
+    state_topic: buscontrol/switch/light_control
+  - platform: template
+    name: "1 WIFI"
+    id: wifi_control
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - component.update: screen
+    - switch.turn_on: relais_wifi
+    on_turn_off:
+    - component.update: screen
+    - switch.turn_off: relais_wifi
+    state_topic: buscontrol/switch/wifi_control
+  - platform: template
+    name: "1 Music"
+    id: music_control
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - component.update: screen
+    on_turn_off:
+    - component.update: screen
+    state_topic: buscontrol/switch/music_control
+
+  - platform: template
+    name: "x Fridolin zu Hause Switch"
+    id: switch_at_home
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+    - switch.turn_off: wifi_control
+    on_turn_off:
+    - switch.turn_on: wifi_control
+    state_topic: buscontrol/switch/switch_at_home
+
+# =============================================== RELAYS ===============================================
+
+# MCP27017 Port Extender hinten
+  - platform: gpio
+    name: "x Relais Kühlschrank"
+    id: relais_compressor
+    state_topic: buscontrol/switch/relais_compressor
+    pin:
+      mcp23xxx: mcp23017_back
+      # Use pin A0
+      number: 0
+      mode:
+        output: true
+      inverted: true
+  - platform: gpio
+    name: "x Relais Kühlschrank High"
+    id: relais_compressor_high
+    state_topic: buscontrol/switch/relais_compressor_high
+    pin:
+      mcp23xxx: mcp23017_back
+      # Use pin A1
+      number: 1
+      mode:
+        output: true
+      inverted: true
+  - platform: gpio
+    name: "x Relais Lüftung"
+    id: relais_fan
+    state_topic: buscontrol/switch/relais_fan
+    pin:
+      mcp23xxx: mcp23017_back
+      # Use pin A2
+      number: 2
+      mode:
+        output: true
+      inverted: true
+  - platform: gpio
+    name: "x Relais Heizung"
+    id: relais_heating
+    state_topic: buscontrol/switch/relais_heating
+    pin:
+      mcp23xxx: mcp23017_back
+      # Use pin A3
+      number: 3
+      mode:
+        output: true
+      inverted: true
+  - platform: gpio
+    name: "x Relais Wifi"
+    id: relais_wifi
+    state_topic: buscontrol/switch/relais_wifi
+    pin:
+      mcp23xxx: mcp23017_back
+      # Use pin A4
+      number: 4
+      mode:
+        output: true
+      inverted: true
+
+# =============================================== PHYSISCHE SCHALTER ===============================================
+
+binary_sensor:
+  - platform: gpio # Schalter 1 für Kühlschrank/Eisfach
+    id: switch1
+    pin:
+      number: GPIO02
+      mode:
+        input: true
+        pullup: true
+    filters:
+        - invert:
+    on_click:
+    - min_length: 50ms
+      max_length: 1000ms
+      then:
+        - switch.toggle: fridge_control
+    - min_length: 1000ms
+      max_length: 5000ms
+      then:
+        - switch.toggle: freezer_control
+  - platform: gpio # Schalter 2 für Lüftung Kühlung/Entfeuchtung
+    id: switch2
+    pin:
+      number: GPIO04
+      mode:
+        input: true
+        pullup: true
+    filters:
+        - invert:
+    on_click:
+    - min_length: 50ms
+      max_length: 1000ms
+      then:
+        - switch.toggle: cool_control
+    - min_length: 1000ms
+      max_length: 5000ms
+      then:
+        - switch.toggle: dry_control
+  - platform: gpio # Schalter 3 für Standheizung
+    id: switch3
+    pin:
+      number: GPIO0
+      mode:
+        input: true
+        pullup: true
+    filters:
+        - invert:
+    on_click:
+    - min_length: 50ms
+      max_length: 1000ms
+      then:
+        - switch.toggle: heat_control
+    - min_length: 1000ms
+      max_length: 5000ms
+      then:
+        - switch.toggle: heat_control
+  - platform: gpio # Schalter 4 für Licht/Radio
+    id: switch4 
+    pin:
+      number: GPIO25
+      mode:
+        input: true
+        pullup: true
+    filters:
+        - invert:
+    on_click:
+    - min_length: 50ms
+      max_length: 1000ms
+      then:
+        - switch.toggle: wifi_control
+    - min_length: 1000ms
+      max_length: 5000ms
+      then:
+        - switch.toggle: music_control
+
+
+# ================================================= SENSOREN ===============================================
+
+i2c:
+  sda: 21
+  scl: 22
+  scan: true
+  id: bus_a
+
+#dallas:
+#  - pin: 27
+one_wire:
+  - platform: gpio
+    pin: 27
+
+ads1115:
+  - address: 0x48 # Board-Batterie
+    id: ads1115_board
+  - address: 0x49 # Starter-Batterie
+    id: ads1115_start
+
+mcp23017:
+  - id: 'mcp23017_back' # Port-Multiplexer Verbau hinten hinter  Kühlschrank
+    address: 0x20
+
+sensor:
+
+  # -------- Debug Information -----
+
+  - platform: debug
+    free:
+      name: "Heap Free"
+    block:
+      name: "Heap Max Block"
+    loop_time:
+      name: "Loop Time"
+    cpu_frequency:
+      name: "CPU Frequency"
+
+  # -------------- WIFI Signal --------------
+
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    id: wifi_signal_percent
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+
+
+    # ------------ 1-Wire Temperatur Sensoren ----------------
+  - platform: dallas_temp
+    address: 0xb20b2281ffff0128 # temp Schiebetür
+    name: "Temp über Schiebetür"
+    id: temp_in_door
+    state_topic: buscontrol/sensor/temp_in_schiebetuer
+    filters:
+        median:
+          window_size: 5
+          send_every: 1
+  - platform: dallas_temp
+    address: 0xb70b2281f5f25528 # temp in front
+    name: "Temp Fahrerkabine"
+    id: temp_in_front
+    state_topic: buscontrol/sensor/temp_in_front
+    filters:
+        median:
+          window_size: 5
+          send_every: 1
+  - platform: dallas_temp
+    address: 0x370b22820211e528 # temp in back
+    name: "Temp im Bett hinten"
+    id: temp_in_back
+    state_topic: buscontrol/sensor/temp_in_back
+    filters:
+        median:
+          window_size: 5
+          send_every: 1
+  - platform: dallas_temp
+    address: 0xea0b2281d2fbd328 # temp unterboden vorn
+    name: "Temp Unterboden vorn"
+    id: temp_out_front
+    state_topic: buscontrol/sensor/temp_out_front
+    filters:
+        median:
+          window_size: 5
+          send_every: 1
+  - platform: dallas_temp
+    address: 0x340b22820af0a928 # temp unterboden hinten
+    name: "Temp Unterboden hinten"
+    id: temp_out_back
+    state_topic: buscontrol/sensor/temp_out_back
+    filters:
+        median:
+          window_size: 5
+          send_every: 1
+  - platform: dallas_temp
+    address: 0x490b2281eea76e28 # fridge
+    name: "Temp Kühlschrank"
+    id: temp_fridge
+    state_topic: buscontrol/sensor/temp_fridge
+  - platform: dallas_temp
+    address: 0xe90b2281f1ebc728 #freezer
+    name: "Temp_Eisfach"
+    id: temp_freezer
+    state_topic: buscontrol/sensor/temp_freezer
+
+    # Virtuelle Temperaturen
+  - platform: template
+    name: "Temp Außen min"
+    id: temp_out # Minimale Außentemperatur
+    state_topic: buscontrol/sensor/temp_out
+    unit_of_measurement: "°C"
+    lambda: |-
+      return ( min (id(temp_out_front).state, id(temp_out_back).state) );
+    update_interval: 60s
+  - platform: template
+    name: "Temp Innen mean"
+    id: temp_in # Mittelwert Innentemperatur
+    state_topic: buscontrol/sensor/temp_in
+    unit_of_measurement: "°C"
+    lambda: |-
+      return (id(temp_in_door).state + id(temp_in_front).state + id(temp_in_back).state) / 3 ;
+    update_interval: 60s
+
+    # Virtuelle Luftfeuchtigkeit
+  - platform: template
+    name: "Feuchte Außen bei Innentemperatur"
+    id: humidity_out_virtual # Virtuelle Luftfeuchtigkeit außen bei Innentemperatur
+    state_topic: buscontrol/sensor/humidity_out_virtual
+    unit_of_measurement: "%"
+    lambda: |-
+      float temp_inside = id(temp_in_dht).state;                                                       // Innentemperatur
+      float temp_outside = id(temp_out_dht).state;                                                     // Außentemperatur
+      float humidity_inside = id(humidity_in_dht).state;                                               // Innenfeuchtigkeit
+      float humidity_outside = id(humidity_out_dht).state;                                             // Außenfeuchtigkeit                                            
+
+      // ---- Berechnung relative Luftfreuchte außen bei innentemperatur ----
+      float SDDTaussen = 6.1078 * pow(10 , ( (7.5 * temp_outside) / (237.3 + temp_outside) )); // SDD(T) = 6.1078 * 10^((a*T)/(b+T))
+      float DD = humidity_outside / 100 * SDDTaussen;                                  // DD(r,T) = r/100 * SDD(T)
+      float v = log(DD / 6.1078) / log(10);
+      float TD = 237.3 * v / (7.5 - v);                                            // TD(r,T) = b*v/(a-v) mit v(r,T) = log10(DD(r,T)/6.1078)
+
+      float SDDTD = 6.1078 * pow(10, ( (7.5 * TD) / (237.3 + TD) ));
+      float SDDTinnen = 6.1078 * pow(10 , ( (7.5 * temp_inside) / (237.3 + temp_inside) ));
+      //my $FeuchteInnen = 100 * $SDDTD / $SDDTinnen;                                     // r(T,TD) = 100 * SDD(TD) / SDD(T)
+
+      return( (humidity_outside * SDDTaussen) / SDDTinnen);          // Außenfeuchtigkeit bei Innentemperatur
+    update_interval: 60s
+    
+          
+    # -------------- DHT Feuchte/Temperatursensoren --------------
+  - platform: dht
+    pin: GPIO33
+    model: DHT22
+    temperature:
+      name: "Temp Innen"
+      id: temp_in_dht
+      state_topic: buscontrol/sensor/temp_in_dht
+    humidity:
+      name: "Feuchte Innen"
+      id: humidity_in_dht
+      state_topic: buscontrol/sensor/humidity_in_dht
+    update_interval: 60s
+  - platform: dht
+    pin: GPIO32
+    model: DHT22
+    temperature:
+      name: "Temp Aussen"
+      id: temp_out_dht
+      state_topic: buscontrol/sensor/temp_out_dht
+    humidity:
+      name: "Feuchte Aussen"
+      id: humidity_out_dht
+      state_topic: buscontrol/sensor/humidity_out_dht
+    update_interval: 60s
+
+    # -------------- AD-Scan-Sensor -----------------
+  - platform: ads1115
+    ads1115_id: ads1115_board
+    id: batt_board_voltage
+    multiplexer: 'A0_A1'
+    gain: 6.144
+    name: "3 Spannung Boardbatterie"
+    state_topic: buscontrol/sensor/batt_board_voltage
+    filters:
+    - calibrate_linear:
+      - 0.0 -> 0.0
+      - -2.44 -> 14.0
+  - platform: ads1115
+    ads1115_id: ads1115_board
+    id: batt_board_current
+    multiplexer: 'A2_A3'
+    gain: 0.256
+    name: "3 Strom Boardbatterie"
+    state_topic: buscontrol/sensor/batt_board_current
+    filters:
+    - multiply: 1000
+    unit_of_measurement: "A"
+  - platform: ads1115
+    ads1115_id: ads1115_start
+    id: batt_start_voltage
+    multiplexer: 'A0_A1'
+    gain: 6.144
+    name: "3 Spannung Starterbatterie"
+    state_topic: buscontrol/sensor/batt_start_voltage
+    filters:
+    - calibrate_linear:
+      - 0.0 -> 0.0
+      - -2.4 -> 14.0
+
+# =============================================== ENERGIEBERECHNUNG BOARDBATTERIE ===============================================
+  - platform: template
+    name: "3 Energie Boardbatterie"
+    id: batt_board_energy
+    state_topic: buscontrol/sensor/batt_board_energy
+    unit_of_measurement: "Ah"
+    lambda: |-
+      if (isnan(id(my_energy_board_float))){
+        id(my_energy_board_float) = 190;
+      }
+      id(my_energy_board_float) += float((id(batt_board_current).state / 60));
+      
+      // SOC ans oberere Limit schieben, wenn Batterie voll ist
+      if (id(batt_board_voltage).state >= 14.2) {
+        id(my_energy_board_float) += 0.1;
+      }
+      
+      // Limitierung SOC
+      if (id(my_energy_board_float) > 200) {
+        id(my_energy_board_float) = 200;
+      } else if(id(my_energy_board_float) < 0) {
+        id(my_energy_board_float) = 0;
+      }
+      return id(my_energy_board_float);
+    update_interval: 60s
+
+
+# ================================================= REGLER ===============================================
+# ------------------ Kühlschrankregelung ------------------
+  - platform: template
+    id: tempsoll_fridge_dynamic                              # Dynamische Kühlschranksollkorrektur nach Batteriestatus
+    name: "2 Kühlschrank Solltemp dynamisch"
+    unit_of_measurement: "°C"
+    lambda: |-
+      int temp_dynamic = id(tempsoll_fridge).state;
+      if( id(batt_board_energy).state > 99 ){                // zwei grad kälter wenn Batterie voll
+        temp_dynamic -= 2 ;
+      }
+      else if( id(batt_board_energy).state < 25 ) {          // zwei grad wärmer, wenn Batterie leer
+        temp_dynamic += 2 ;
+      }
+      return temp_dynamic;
+    state_topic: buscontrol/number/tempsoll_fridge_dynamic
+    update_interval: 60s
+  # Kühlschrank Regler
+  - platform: template
+    id: control_fridge
+    lambda: |-
+      // INIT KÜHLSCHRANKREGELUNG
+      int compressor; // State: 0=off 1=low 2=high
+      float tempoffset_fridge_hysterises = 0.2;                                  // Ein/Aus-Hysterese
+      float tempoffset_freezer_hysterises = 3;                                  // Ein/Aus-Hysterese
+      float temptarget_fridge = id(tempsoll_fridge_dynamic).state;                           // Zieltemperatur Kühlschrank
+      float temptarget_freezer = id(tempsoll_freezer).state;                         // Zieltemperatur Gefrierfach
+      float tempoffset_battfull = -3;                        // Zieltemperatur-Offset bei voller Batterie (Kühlschrank)
+      float tempoffset_battempty = 3;                        // Zieltemperatur-Offset bei leerer Batterie (Kühlschrank)
+      
+      // BATTERIELADESTAND ANPASSUNG
+      //if( id(my_energy_board_float) > 99 ){
+      //  temptarget_fridge += tempoffset_battfull;
+      //}
+      //else if( id(my_energy_board_float) < 30 ) {
+      //  temptarget_fridge += tempoffset_battempty;
+      //}
+
+      // REGLER zum setzen der Variable compressor
+      if(id(fridge_control).state or id(freezer_control).state) {
+        // Volle Leistung
+        if( ((id(temp_fridge).state > (temptarget_fridge + tempoffset_fridge_hysterises + 2) ) and id(fridge_control).state)
+        or ((id(temp_freezer).state > (temptarget_freezer + 2) ) and id(freezer_control).state) and (id(temp_fridge).state > 2) ){
+          compressor = 2;
+        }
+        // Reduzierte Leistung
+        else if( ((id(temp_fridge).state > (temptarget_fridge + tempoffset_fridge_hysterises) ) and id(fridge_control).state)
+        or ((id(temp_freezer).state > (temptarget_freezer) ) and id(freezer_control).state) and (id(temp_fridge).state > 2) ){
+          compressor = 1;
+        }
+        // AUS
+        else if( ((id(temp_fridge).state < temptarget_fridge) and id(fridge_control).state)
+        or ((id(temp_freezer).state < (temptarget_freezer - tempoffset_freezer_hysterises)) and id(freezer_control).state) ){
+          compressor = 0;
+        }
+      }
+      else{
+        compressor = 0;
+      }
+      // Relais-Ansteuerung durch Variable compressor
+      if (compressor == 0 or id(temp_fridge).state < 1 or id(temp_freezer).state < -15) {
+        id(relais_compressor_high).turn_off();
+        id(relais_compressor).turn_off();
+      }
+      else if(compressor == 1 and id(temp_fridge).state > 2 and id(temp_freezer).state > -13){
+        id(relais_compressor_high).turn_off();
+        id(relais_compressor).turn_on();
+      }
+      else if(compressor == 2 and id(temp_fridge).state > 2 and id(temp_freezer).state > -13){
+        id(relais_compressor_high).turn_on();
+        id(relais_compressor).turn_off();
+      }
+      return compressor;
+    update_interval: 60s
+
+# ----------------- Lüftungsregelung -------------------
+  - platform: template
+    id: control_fan
+    lambda: |-
+      // INIT LÜFTUNGSREGELUNG
+      float tempoffset_hysterises = 1;                                     // Ein/Aus-Hysterese Kühlung
+      float humidityoffset_hysterises = 5;                                 // Ein/Aus-Hysterese
+      
+      float temptarget_cool = id(tempsoll_cool).state;                     // Zieltemperatur Kühlung
+      float humiditytarget_dry = id(humiditysoll_dry).state;               // Zielfeuchte Trocknen
+      float temp_inside = id(temp_in).state;                                                       // Innentemperatur
+      float temp_outside = id(temp_out).state;                                                      // Außentemperatur
+      float humidity_inside = id(humidity_in_dht).state;                                                   // Innenfeuchtigkeit
+      float humidity_outside_calc = id(humidity_out_virtual).state;                                                  // Außenfeuchtigkeit                                            
+
+      // ------ REGLER zum setzen der Variable compressor ------
+      if(id(cool_control).state or id(dry_control).state) {
+        // Kühlungsregelung
+        if( (temp_inside > temptarget_cool + tempoffset_hysterises) and (temp_inside > temp_outside +2) and id(cool_control).state){
+          id(relais_fan).turn_on();
+        }
+        else if( ((temp_inside < temptarget_cool) or (temp_inside < temp_outside +1)) and id(cool_control).state){
+          id(relais_fan).turn_off();
+        }
+        // Feuchteregelung
+        else if( (humidity_inside > humiditytarget_dry + humidityoffset_hysterises) and (humidity_inside > humidity_outside_calc +5) and (id(my_energy_board_float) >98) and id(dry_control).state){
+          id(relais_fan).turn_on();
+        }
+        else if( ((humidity_inside < humiditytarget_dry) or (humidity_inside < humidity_outside_calc +3)) and id(dry_control).state){
+          id(relais_fan).turn_off();
+        }
+      }
+      else{
+        id(relais_fan).turn_off(); // Kühlung/Feuchte Regelung aus
+        }
+      return id(relais_fan).state;
+    update_interval: 60s
+
+# ============================== zu Hause Berechnung ============================
+  - platform: template
+    id: at_home
+    name: "x Fridolin zu Hause"
+    lambda: |-
+      std::string scan_results = id(wifi_scan_results).state;
+      std::string string1 = scan_results.c_str();
+      if(string1.find("CasaS") != std::string::npos){
+        id(switch_at_home).turn_on();
+        return 1;
+        }
+      else{
+        id(switch_at_home).turn_off();
+        return 0;
+        }
+    update_interval: 60s
+
+
+text_sensor:
+
+# WIFI-Status
+  - platform: wifi_info
+    ip_address:
+      name: Wifi IP Address
+    ssid:
+      name: Wifi Connected SSID
+      id: ssid_name
+    #bssid:
+    #  name: ESP Connected BSSID
+    #mac_address:
+    #  name: ESP Mac Wifi Address
+    scan_results:
+      #name: ESP Latest Scan Results
+      id: wifi_scan_results
+
+# Debug
+  - platform: debug
+    device:
+      name: "Device Info"
+    reset_reason:
+      name: "Reset Reason"
+
+# Uhrzeit
+  - platform: template
+    #name: "Stunden Minuten"
+    lambda: |-
+      auto time = id(sntp_time).now().strftime("%H:%M");
+      return {time};
+    id: tpl_hour_sec
+    update_interval: 60s
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Berlin
+    servers:
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
+      - 2.pool.ntp.org
+    on_time:
+    - seconds: 0
+      minutes: 0
+      then:
+       - lambda: |-
+            wifi::global_wifi_component->start_scanning();
+            //std::string ssid_string = id(ssid_name).state;
+            //if (ssid_string.c_str() == "Fridolin"){
+            //  wifi::global_wifi_component->start_scanning();
+            // }
+
+button:
+  - platform: restart
+    name: "Restart Button"

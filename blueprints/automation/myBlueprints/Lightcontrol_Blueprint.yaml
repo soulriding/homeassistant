@@ -1,0 +1,225 @@
+blueprint:
+  name: Lightcontrol Blueprint
+  description: Logic to set helper Lightstatus depending on helper Lightmode
+  domain: automation
+  author: Diggler
+  input:
+    motion_sensor_1:
+      name: Motion Sensor 1
+      selector:
+        entity:
+          domain:
+            - binary_sensor
+          device_class:
+            - motion
+            - presence
+    motion_sensor_2:
+      name: Motion Sensor 2
+      selector:
+        entity:
+          domain:
+            - binary_sensor
+          device_class:
+            - motion
+            - presence
+    motion_sensor_3:
+      name: Motion Sensor 3
+      selector:
+        entity:
+          domain:
+            - binary_sensor
+          device_class:
+            - motion
+            - presence
+    motion_sensor_4:
+      name: Motion Sensor 4 - only Lowlight
+      selector:
+        entity:
+          domain:
+            - binary_sensor
+          device_class:
+            - motion
+            - presence
+    illuminance_sensor:
+      name: Illuminance Sensor
+      selector:
+        entity:
+          domain:
+            - sensor
+          device_class: illuminance
+    lightmode_helper:
+      name: Lightmode Helper (input)
+      selector:
+        entity:
+          domain:
+            - input_select
+    lightstate_helper:
+      name: Lightstate Helper (output)
+      selector:
+        entity:
+          domain:
+            - input_select
+    wait_time_on:
+      name: Wait time on
+      description: Time staying in bright mode
+      selector:
+        number:
+          mode: slider
+          min: 10
+          max: 3600
+          unit_of_measurement: seconds
+      default: 120
+    wait_time_low:
+      name: Wait time low
+      description: Time staying in low light mode
+      selector:
+        number:
+          mode: slider
+          min: 10
+          max: 3600
+          unit_of_measurement: seconds
+      default: 60
+    illuminance_limit:
+      name: Illuminance Limit
+      description: Maximum limit for auto activation
+      selector:
+        number:
+          mode: slider
+          min: 0
+          max: 2500
+          unit_of_measurement: lux
+      default: 1
+
+trigger:
+  - platform: state
+    entity_id:
+      - !input motion_sensor_1
+      - !input motion_sensor_2
+      - !input motion_sensor_3
+      - !input motion_sensor_4
+    from: null
+    to: "on"
+  - platform: state
+    entity_id:
+      - !input lightmode_helper
+    to: auto
+    id: to_auto
+  - platform: state
+    entity_id:
+      - !input lightmode_helper
+condition: []
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input lightmode_helper
+            state: "on"
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id: !input lightstate_helper
+            data:
+              option: "on"
+      - conditions:
+          - condition: state
+            entity_id: !input lightmode_helper
+            state: low
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id: !input lightstate_helper
+            data:
+              option: low
+      - conditions:
+          - condition: state
+            entity_id: !input lightmode_helper
+            state: "off"
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id: !input lightstate_helper
+            data:
+              option: "off"
+      - conditions:
+          - condition: state
+            entity_id: !input lightmode_helper
+            state: auto
+          - condition: or
+            conditions:
+              - condition: state
+                entity_id: !input motion_sensor_1
+                state: "on"
+                enabled: true
+              - condition: state
+                entity_id: !input motion_sensor_2
+                state: "on"
+                enabled: true
+              - condition: state
+                entity_id: !input motion_sensor_3
+                state: "on"
+                enabled: true
+              - condition: state
+                entity_id: !input motion_sensor_4
+                state: "on"
+                enabled: true
+        sequence:
+          - if:
+              - condition: numeric_state
+                entity_id: !input illuminance_sensor
+                below: !input illuminance_limit
+            then:
+              - if:
+                  - condition: state
+                    entity_id: !input motion_sensor_4
+                    state: "off"
+                then:
+                  - service: input_select.select_option
+                    target:
+                      entity_id: !input lightstate_helper
+                    data:
+                      option: "on"
+                else:
+                  - if:
+                      - condition: state
+                        entity_id: !input lightstate_helper
+                        state: "off"
+                    then:
+                      - service: input_select.select_option
+                        target:
+                          entity_id: !input lightstate_helper
+                        data:
+                          option: "low"
+              - delay:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input wait_time_on
+                  milliseconds: 0
+              - if: []
+                then:
+                  - service: input_select.select_option
+                    target:
+                      entity_id: !input lightstate_helper
+                    data:
+                      option: low
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: !input wait_time_on
+                      milliseconds: 0
+          - service: input_select.select_option
+            target:
+              entity_id: !input lightstate_helper
+            data:
+              option: "off"
+      - conditions:
+          - condition: trigger
+            id:
+              - to_auto
+        sequence:
+          - service: input_select.select_option
+            metadata: {}
+            data:
+              option: "off"
+            target:
+              entity_id: !input lightstate_helper
+mode: restart

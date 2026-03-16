@@ -1,0 +1,92 @@
+sensor:
+  - name: "BattBMS SOC"
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack SOC"
+    unit_of_measurement: "%"
+    device_class: battery
+    unique_id: "battbms_SOC"
+    state_class: total
+  - name: BattBMS Cell 1
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Cells Voltage/Cell 1"
+    unit_of_measurement: "V"
+  - name: BattBMS Cell 2
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Cells Voltage/Cell 2"
+    unit_of_measurement: "V"
+  - name: BattBMS Cell 3
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Cells Voltage/Cell 3"
+    unit_of_measurement: "V"
+  - name: BattBMS Cell 4
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Cells Voltage/Cell 4"
+    unit_of_measurement: "V"
+  - name: BattBMS Cell 5
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Cells Voltage/Cell 5"
+    unit_of_measurement: "V"
+  - name: BattBMS Cell 6
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Cells Voltage/Cell 6"
+    unit_of_measurement: "V"
+  - name: BattBMS Cell 7
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Cells Voltage/Cell 7"
+    unit_of_measurement: "V"
+  - name: BattBMS Cell 8
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Cells Voltage/Cell 8"
+    unit_of_measurement: "V"
+  - name: BattBMS Pack Voltage
+    state_topic: "24VSpeicher_BMS/24VSpeicher_BMS/Pack Voltage"
+    unit_of_measurement: "V"
+
+  - name: "Batt Power In"
+    state_topic: "/home/power_in"
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: total
+    unique_id: "batt_power_in"
+  - name: "Batt Power Out"
+    state_topic: "/home/power_out"
+    unit_of_measurement: "W"
+    device_class: power
+    unique_id: "batt_power_out"
+    state_class: total
+  - name: "Water Today"
+    unique_id: "water_day"
+    device_class: water
+    unit_of_measurement: "L"
+    state_class: total
+    state_topic: "stat/tasmota_027B52/RESULT"
+    value_template: "{{ value_json.Mem2 }}"
+  - name: "Wind Speed"
+    unique_id: "wind_speed"
+    device_class: "wind_speed"
+    unit_of_measurement: "kn"
+    state_class: measurement
+    state_topic: "stat/tasmota_DBAAB8/RESULT"
+    value_template: "{{ value_json.Var1 }}"
+  - name: "FBHZcontrol Temperature Measured"
+    state_topic: "ThermostatWohnzimmer_Climate/measured-temp"
+    unit_of_measurement: "°C"
+    device_class: temperature
+    unique_id: "fbhzcontrol_temperature_measured"
+  #  - name: "FBHZcontrol Temperature Setpoint"
+  #    state_topic: "fhem/temp_wohnzimmer_setpoint"
+  #    unit_of_measurement: "°C"
+  #    device_class: temperature
+  #    unique_id: "fbhzcontrol_temperature_setpoint"
+  - name: "FBHZcontrol Temperature fhem_mode"
+    state_topic: "fhem/fbhz_mode"
+    unique_id: "fbhzcontrol_temperature_fhemcontrol"
+  - name: "Soyosource_L1L2L3"
+    unique_id: "soyosource_L1L2L3"
+    device_class: "power"
+    unit_of_measurement: "W"
+    state_class: measurement
+    state_topic: "Soyosource/SOYO_ff1623/AllJsonData"
+    value_template: "{{ value_json.L1L2L3 }}"
+  - name: "Soyosource_Notaus"
+    unique_id: "soyosource_notaus"
+    state_topic: "Soyosource/SOYO_ff1623/AllJsonData"
+    value_template: "{{ value_json.NotAus }}"
+  - name: "Soyosource_WattsOut"
+    unique_id: "soyosource_wattsout"
+    device_class: "power"
+    unit_of_measurement: "W"
+    state_class: measurement
+    state_topic: "Soyosource/SOYO_ff1623/AllJsonData"
+    value_template: "{{ value_json.WattsOut }}"

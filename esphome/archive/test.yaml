@@ -1,0 +1,311 @@
+esphome:
+  name: relaisboard_sprenger
+
+esp8266:
+  board: esp12e
+
+substitutions:
+  name1: Beetehof
+  name2: Beetebach
+  name3: Beetehaus
+  name4: Rasen1
+  clientname: sprenger
+
+# Enable logging
+logger:
+
+api:
+  encryption:
+    key: "d3HgPNfamUe9YINFS0nmwR/X99x4oCMF2EHXlBEfwq4="
+
+ota:
+  password: "0555452c7696f2c0a7e8085ac8d6ef79"
+
+wifi:
+  ssid: "CasaS"
+  password: "krokodilrotze"
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "relaisboard_sprenger"
+    password: "krokodilrotze"
+
+mqtt:
+  broker: 192.168.82.30
+  client_id: ${clientname}
+  reboot_timeout: 0s
+  discovery: false
+  discovery_retain: false
+
+web_server:
+  port: 80
+  ota: false
+
+# Time for turn-off-timer in minutes 
+
+number:
+  - platform: template
+    name: Time $name1
+    id: time_relay1
+    state_topic: ${clientname}/duration_${name1}
+    command_topic: ${clientname}/setduration_${name1}
+    optimistic: true
+    initial_value: 30
+    min_value: 5
+    max_value: 60
+    step: 5
+    unit_of_measurement: "min"
+  - platform: template
+    name: Time $name2
+    id: time_relay2
+    state_topic: ${clientname}/duration_${name2}
+    command_topic: ${clientname}/setduration_${name2}
+    optimistic: true
+    initial_value: 30
+    min_value: 5
+    max_value: 60
+    step: 5
+    unit_of_measurement: "min"
+  - platform: template
+    name: Time $name3
+    id: time_relay3
+    state_topic: ${clientname}/duration_${name3}
+    command_topic: ${clientname}/setduration_${name3}
+    optimistic: true
+    initial_value: 30
+    min_value: 5
+    max_value: 60
+    step: 5
+    unit_of_measurement: "min"
+  - platform: template
+    name: Time $name4
+    id: time_relay4
+    state_topic: ${clientname}/duration_${name4}
+    command_topic: ${clientname}/setduration_${name4}
+    optimistic: true
+    initial_value: 30
+    min_value: 5
+    max_value: 60
+    step: 5
+    unit_of_measurement: "min"
+
+binary_sensor:
+  - platform: gpio
+    id: switch1
+    pin:
+      number: GPIO05
+      mode:
+        input: true
+        pullup: true
+    filters:
+        - invert:
+    on_press:
+      then:
+        - switch.toggle: relay1
+  - platform: gpio
+    id: switch2
+    pin:
+      number: GPIO04
+      mode:
+        input: true
+        pullup: true
+    filters:
+        - invert:
+    on_press:
+      then:
+        - switch.toggle: relay2
+  - platform: gpio
+    id: switch3
+    pin:
+      number: GPIO00
+      mode:
+        input: true
+        pullup: true
+    filters:
+        - invert:
+    on_press:
+      then:
+        - switch.toggle: relay3
+  - platform: gpio
+    id: switch4
+    pin:
+      number: GPIO2
+      mode:
+        input: true
+        pullup: true
+    filters:
+        - invert:
+    on_press:
+      then:
+        - switch.toggle: relay4
+
+
+# Use the blue LED in the device as a status LED, which will blink if there are warnings (slow) or errors (fast)
+#status_led:
+#  pin:
+#    number: GPIO5
+#    inverted: True
+
+# Four relais outputs controllable by MQTT . On turning on a turn-off timer is triggered
+switch:
+  - platform: gpio
+    pin: GPIO16
+    name: Relais $name1
+    id: relay1
+    state_topic: ${clientname}/relay_${name1}
+    command_topic: ${clientname}/setrelay_${name1}
+    on_turn_on:
+      then:
+        - script.stop: timer_relay1
+        - script.execute: timer_relay1
+    on_turn_off:
+    - script.stop: timer_relay1
+  - platform: gpio
+    pin: GPIO14
+    name: Relais $name2
+    id: relay2
+    state_topic: ${clientname}/relay_${name2}
+    command_topic: ${clientname}/setrelay_${name2}
+    on_turn_on:
+      then:
+        - script.stop: timer_relay2
+        - script.execute: timer_relay2
+    on_turn_off:
+    - script.stop: timer_relay2
+  - platform: gpio
+    pin: GPIO12
+    name: Relais $name3
+    id: relay3
+    state_topic: ${clientname}/relay_${name3}
+    command_topic: ${clientname}/setrelay_${name3}
+    on_turn_on:
+      then:
+        - script.stop: timer_relay3
+        - script.execute: timer_relay3
+    on_turn_off:
+    - script.stop: timer_relay3
+  - platform: gpio
+    pin: GPIO13
+    name: Relais $name4
+    id: relay4
+    state_topic: ${clientname}/relay_${name4}
+    command_topic: ${clientname}/setrelay_${name4}
+    on_turn_on:
+      then:
+        - script.stop: timer_relay4
+        - script.execute: timer_relay4
+    on_turn_off:
+    - script.stop: timer_relay4
+
+# Additional triggers to trigger the turn-off timers
+  - platform: template
+    id: trigger1
+    name: Trigger $name1
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    command_topic: ${clientname}/trigger_${name1}
+    on_turn_on:
+      then:
+        - switch.turn_on: relay1
+        - script.stop: timer_relay1
+        - script.execute: timer_relay1
+        - delay: 100ms
+        - switch.turn_off: trigger1
+  - platform: template
+    id: trigger2
+    name: Trigger $name2
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    command_topic: ${clientname}/trigger_${name2}
+    on_turn_on:
+      then:
+        - switch.turn_on: relay2
+        - script.stop: timer_relay2
+        - script.execute: timer_relay2
+        - delay: 100ms
+        - switch.turn_off: trigger2
+  - platform: template
+    id: trigger3
+    name: Trigger $name3
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    command_topic: ${clientname}/trigger_${name3}
+    on_turn_on:
+      then:
+        - switch.turn_on: relay3
+        - script.stop: timer_relay3
+        - script.execute: timer_relay3
+        - delay: 100ms
+        - switch.turn_off: trigger3
+  - platform: template
+    id: trigger4
+    name: Trigger $name4
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    command_topic: ${clientname}/trigger_${name4}
+    on_turn_on:
+      then:
+        - switch.turn_on: relay4
+        - script.stop: timer_relay4
+        - script.execute: timer_relay4
+        - delay: 100ms
+        - switch.turn_off: trigger4
+
+  
+# turn-off timers
+script:
+  - id: timer_relay1
+    then:
+      - delay: !lambda "return id(time_relay1).state * 1000 * 60;"
+      - switch.turn_off: relay1
+  - id: timer_relay2
+    then:
+      - delay: !lambda "return id(time_relay2).state * 1000 * 60;"
+      - switch.turn_off: relay2
+  - id: timer_relay3
+    then:
+      - delay: !lambda "return id(time_relay3).state * 1000 * 60;"
+      - switch.turn_off: relay3
+  - id: timer_relay4
+    then:
+      - delay: !lambda "return id(time_relay4).state * 1000 * 60;"
+      - switch.turn_off: relay4
+
+sensor:
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    id: wifi_signal_percent
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+
+
+text_sensor:
+
+# WIFI-Status
+  - platform: wifi_info
+    ip_address:
+      name: Wifi IP Address
+    ssid:
+      name: Wifi Connected SSID
+      id: ssid_name
+    #bssid:
+    #  name: ESP Connected BSSID
+    #mac_address:
+    #  name: ESP Mac Wifi Address
+    scan_results:
+      #name: ESP Latest Scan Results
+      id: wifi_scan_results
+
+
+button:
+  - platform: restart
+    name: "Restart Button"

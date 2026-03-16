@@ -1,0 +1,542 @@
+- id: '1711119706637'
+  name: Night Lights on
+  entities:
+    input_select.lightmode_livingroom:
+      options:
+      - 'on'
+      - on_tvdim
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Livingroom
+      state: on_tvdim
+    light.tasmota_led207_tasmota_led207_flurschrank:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - Solid
+      - Wake up
+      - Cycle up
+      - Cycle down
+      - Random
+      supported_color_modes:
+      - color_temp
+      - hs
+      effect: Solid
+      color_mode: color_temp
+      brightness: 166
+      color_temp_kelvin: 6535
+      color_temp: 153
+      hs_color:
+      - 54.768
+      - 1.6
+      rgb_color:
+      - 255
+      - 254
+      - 250
+      xy_color:
+      - 0.326
+      - 0.333
+      friendly_name: Tasmota-LED207 Tasmota-LED207_Flurschrank
+      supported_features: 36
+      state: 'on'
+    switch.poolfeuer:
+      linkquality: 255
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      friendly_name: Poolfeuer
+      state: 'on'
+    switch.terrassenfeuer:
+      linkquality: 172
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      friendly_name: Terrassenfeuer
+      state: 'on'
+    light.flurunten_licht:
+      effect_list:
+      - blink
+      - breathe
+      - okay
+      - channel_change
+      - finish_effect
+      - stop_effect
+      supported_color_modes:
+      - brightness
+      effect:
+      color_mode: brightness
+      brightness: 128
+      level_config:
+        on_level: previous
+      linkquality: 255
+      power_on_behavior:
+      update:
+        installed_version: 587810353
+        latest_version: 587810353
+        state: idle
+      update_available: false
+      friendly_name: Flurunten_Licht
+      supported_features: 44
+      state: 'on'
+    switch.fluroben_licht:
+      friendly_name: Fluroben_Licht
+      linkquality: 232
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      state: 'on'
+  icon: mdi:lightbulb-night
+  metadata:
+    input_select.lightmode_livingroom:
+      entity_only: true
+    light.tasmota_led207_tasmota_led207_flurschrank:
+      entity_only: true
+    switch.poolfeuer:
+      entity_only: true
+    switch.terrassenfeuer:
+      entity_only: true
+    light.flurunten_licht:
+      entity_only: true
+    switch.fluroben_licht:
+      entity_only: true
+- id: '1711120070978'
+  name: Lights Goodnight off
+  entities:
+    input_select.lightmode_livingroom:
+      options:
+      - 'on'
+      - on_tvdim
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Livingroom
+      state: auto
+    light.tasmota_led207_tasmota_led207_flurschrank:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - Solid
+      - Wake up
+      - Cycle up
+      - Cycle down
+      - Random
+      supported_color_modes:
+      - color_temp
+      - hs
+      effect: Solid
+      color_mode: color_temp
+      brightness: 76
+      color_temp_kelvin: 6535
+      color_temp: 153
+      hs_color:
+      - 54.768
+      - 1.6
+      rgb_color:
+      - 255
+      - 255
+      - 251
+      xy_color:
+      - 0.325
+      - 0.333
+      friendly_name: Tasmota-LED207 Tasmota-LED207_Flurschrank
+      supported_features: 36
+      state: 'on'
+    switch.terrassenfeuer:
+      friendly_name: Terrassenfeuer
+      state: 'off'
+    switch.poolfeuer:
+      friendly_name: Poolfeuer
+      state: 'off'
+  metadata:
+    input_select.lightmode_livingroom:
+      entity_only: true
+    light.tasmota_led207_tasmota_led207_flurschrank:
+      entity_only: true
+    switch.terrassenfeuer:
+      entity_only: true
+    switch.poolfeuer:
+      entity_only: true
+- id: '1711120173664'
+  name: Lights off
+  entities:
+    light.tasmota_led207_tasmota_led207_flurschrank:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - Solid
+      - Wake up
+      - Cycle up
+      - Cycle down
+      - Random
+      supported_color_modes:
+      - color_temp
+      - hs
+      effect:
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      friendly_name: Tasmota-LED207 Tasmota-LED207_Flurschrank
+      supported_features: 36
+      state: 'off'
+    input_select.lightmode_livingroom:
+      options:
+      - 'on'
+      - on_tvdim
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Livingroom
+      state: auto
+    switch.poolfeuer:
+      linkquality: 255
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      friendly_name: Poolfeuer
+      state: 'off'
+    switch.terrassenfeuer:
+      linkquality: 160
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      friendly_name: Terrassenfeuer
+      state: 'off'
+    light.flurunten_licht:
+      effect_list:
+      - blink
+      - breathe
+      - okay
+      - channel_change
+      - finish_effect
+      - stop_effect
+      supported_color_modes:
+      - brightness
+      effect:
+      color_mode:
+      brightness:
+      level_config:
+        on_level: previous
+      linkquality: 255
+      power_on_behavior:
+      update:
+        installed_version: 587810353
+        latest_version: 587810353
+        state: idle
+      update_available: false
+      friendly_name: Flurunten_Licht
+      supported_features: 44
+      state: 'off'
+    switch.fluroben_licht:
+      friendly_name: Fluroben_Licht
+      linkquality: 255
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      state: 'off'
+  metadata:
+    light.tasmota_led207_tasmota_led207_flurschrank:
+      entity_only: true
+    input_select.lightmode_livingroom:
+      entity_only: true
+    switch.poolfeuer:
+      entity_only: true
+    switch.terrassenfeuer:
+      entity_only: true
+    light.flurunten_licht:
+      entity_only: true
+    switch.fluroben_licht:
+      entity_only: true
+- id: '1728503626265'
+  name: Gartenlichter aus
+  entities:
+    input_select.lightmode_gartenhaus:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenhaus
+      state: 'off'
+    input_select.lightmode_gartenhinten:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenhinten
+      state: 'off'
+    input_select.lightmode_gartenvorn:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenvorn
+      state: 'off'
+    switch.poolfeuer:
+      linkquality: 255
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      friendly_name: Poolfeuer
+      state: 'off'
+    switch.terrassenfeuer:
+      linkquality: 160
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      friendly_name: Terrassenfeuer
+      state: 'off'
+  icon: mdi:lightbulb-group-off
+  metadata:
+    input_select.lightmode_gartenhaus:
+      entity_only: true
+    input_select.lightmode_gartenhinten:
+      entity_only: true
+    input_select.lightmode_gartenvorn:
+      entity_only: true
+    switch.poolfeuer:
+      entity_only: true
+    switch.terrassenfeuer:
+      entity_only: true
+- id: '1728503767046'
+  name: Gartenlichter an
+  entities:
+    input_select.lightmode_gartenhaus:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenhaus
+      state: 'on'
+    input_select.lightmode_gartenhinten:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenhinten
+      state: 'on'
+    input_select.lightmode_gartenvorn:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenvorn
+      state: 'on'
+    switch.poolfeuer:
+      friendly_name: Poolfeuer
+      state: 'on'
+    switch.terrassenfeuer:
+      friendly_name: Terrassenfeuer
+      state: 'on'
+  icon: mdi:lightbulb-group
+  metadata:
+    input_select.lightmode_gartenhaus:
+      entity_only: true
+    input_select.lightmode_gartenhinten:
+      entity_only: true
+    input_select.lightmode_gartenvorn:
+      entity_only: true
+    switch.poolfeuer:
+      entity_only: true
+    switch.terrassenfeuer:
+      entity_only: true
+- id: '1728503813228'
+  name: Gartenlichter auto
+  entities:
+    input_select.lightmode_gartenhaus:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenhaus
+      state: auto
+    input_select.lightmode_gartenhinten:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenhinten
+      state: auto
+    input_select.lightmode_gartenvorn:
+      options:
+      - 'on'
+      - low
+      - 'off'
+      - auto
+      editable: true
+      icon: mdi:lightbulb-question
+      friendly_name: Lightmode Gartenvorn
+      state: auto
+  icon: mdi:lightbulb-group-outline
+  metadata:
+    input_select.lightmode_gartenhaus:
+      entity_only: true
+    input_select.lightmode_gartenhinten:
+      entity_only: true
+    input_select.lightmode_gartenvorn:
+      entity_only: true
+- id: '1732959712500'
+  name: Weihnachtsbeleuchtung an
+  entities:
+    switch.sd3:
+      linkquality: 244
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      friendly_name: SD3
+      state: 'on'
+    switch.tasmota_sd116:
+      friendly_name: Tasmota-SD116
+      state: 'on'
+    switch.tasmota_sd114:
+      friendly_name: Tasmota-SD114
+      state: 'on'
+    switch.tasmota_sd115:
+      friendly_name: Tasmota-SD115
+      state: 'on'
+    switch.tasmota_sd100_tasmota:
+      friendly_name: Tasmota-SD100 Tasmota
+      state: 'on'
+    switch.sd16:
+      child_lock: UNLOCK
+      countdown: 0
+      current: 0.02
+      energy: 0.01
+      indicator_mode: off/on
+      linkquality: 255
+      power: 0
+      power_outage_memory: restore
+      update:
+        installed_version: -1
+        latest_version: -1
+        state:
+      update_available:
+      voltage: 220
+      friendly_name: SD16
+      state: 'on'
+  icon: mdi:string-lights
+  metadata:
+    switch.sd3:
+      entity_only: true
+    switch.tasmota_sd116:
+      entity_only: true
+    switch.tasmota_sd114:
+      entity_only: true
+    switch.tasmota_sd115:
+      entity_only: true
+    switch.tasmota_sd100_tasmota:
+      entity_only: true
+    switch.sd16:
+      entity_only: true
+- id: '1732959759450'
+  name: Weihnachtsbeleuchtung aus
+  entities:
+    switch.sd3:
+      linkquality: 255
+      update:
+        installed_version: 16909577
+        latest_version: 16909577
+        state: idle
+      update_available: false
+      friendly_name: SD3
+      state: 'off'
+    switch.tasmota_sd114:
+      friendly_name: Tasmota-SD114
+      state: 'off'
+    switch.tasmota_sd115:
+      friendly_name: Tasmota-SD115
+      state: 'off'
+    switch.tasmota_sd116:
+      friendly_name: Tasmota-SD116
+      state: 'off'
+    switch.tasmota_sd100_tasmota:
+      friendly_name: Tasmota-SD100 Tasmota
+      state: 'off'
+    switch.sd16:
+      child_lock: UNLOCK
+      countdown: 0
+      current: 0
+      energy: 0.15
+      indicator_mode: off/on
+      linkquality: 255
+      power: 0
+      power_outage_memory: restore
+      update:
+        installed_version: -1
+        latest_version: -1
+        state:
+      update_available:
+      voltage: 221
+      friendly_name: SD16
+      state: 'off'
+  icon: mdi:string-lights-off
+  metadata:
+    switch.sd3:
+      entity_only: true
+    switch.tasmota_sd114:
+      entity_only: true
+    switch.tasmota_sd115:
+      entity_only: true
+    switch.tasmota_sd116:
+      entity_only: true
+    switch.tasmota_sd100_tasmota:
+      entity_only: true
+    switch.sd16:
+      entity_only: true

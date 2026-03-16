@@ -1,0 +1,584 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+backup:
+
+influxdb:
+  host: localhost
+  port: 8086
+  database: homeassistant
+  username: homeassistant
+  password: !secret password
+  max_retries: 3
+  default_measurement: state
+  tags:
+    source: HA
+  tags_attributes:
+    - friendly_name
+  include:
+    entities:
+      - sensor.grid_energy_sum
+      - sensor.grid_power_sum
+      - sensor.grid_energy_sum_day
+      - sensor.solar_energy_sum_total
+      - sensor.solar_energy_sum_day
+      - sensor.sauna_energy
+      - sensor.sauna_energy_year
+      - sensor.water_today
+      - sensor.solarthermie_power
+      - sensor.solarthermie_energy
+      - sensor.solarthermie_energy_day
+      - sensor.gas_energy_today
+      - sensor.gas_energy_year
+      - sensor.gas_energy_total
+      - sensor.electricity_energy_today
+      - sensor.sv_brennerleistung
+      - sensor.fbhzcontrol_temperature_setpoint
+      - sensor.fbhzcontrol_temperature_measured
+      - sensor.wind_speed
+      - sensor.gas_energy_daylog
+      - sensor.water_daylog
+      - sensor.grid_energy_sum_daylog
+      - sensor.electricity_energy_daylog
+      - sensor.solarthermie_energy_daylog
+      - sensor.solar_energy_sum_total_daylog
+      - input_number.solar_energy_sum_total_daylog
+      - input_number.grid_energy_sum_daylog
+      - input_number.water_daylog
+      - input_number.gas_energy_daylog
+      - input_number.solarthermie_energy_daylog
+      - input_number.electricity_energy_daylog
+    entity_globs:
+      - sensor.*_temperatur
+      - sensor.*_luftfeuchtigkeit
+      - sensor.*_daylog
+
+homekit:
+  - name: HASS Bridge
+    port: 21063
+    filter:
+      include_entities:
+        - sensor.philleicht_storage
+        - input_boolean.switch_anwesenheit
+        - switch.switch_terrasse_lights_ch2
+        - switch.sd18
+        - switch.switch_garage_ch1
+        - input_boolean.lueftkuehlung_automatik
+
+sensor:
+  - platform: influxdb
+    host: localhost
+    port: 8086
+    username: homeassistant
+    password: !secret password
+    scan_interval: 3600
+    queries:
+      - name: InfluxDB DB size
+        unique_id: "influxdb_db_size"
+        unit_of_measurement: MB
+        value_template: "{{ (value|float / 1024 /1024)|round(1) }}"
+        group_function: sum
+        measurement: '"monitor"."shard"'
+        database: _internal
+        where: "time > now() - 10s"
+        field: diskBytes
+  - platform: integration
+    source: sensor.batt_power_in
+    name: "Batt Energy In"
+    unique_id: "batt_energy_in"
+    unit_prefix: k
+    unit_time: h
+    round: 2
+    #state_class: total_increasing
+  - platform: integration
+    source: sensor.batt_power_out
+    name: "Batt Energy Out"
+    unique_id: "batt_energy_out"
+    unit_prefix: k
+    unit_time: h
+    round: 2
+    #state_class: total_increasing
+  - platform: waste_collection_schedule
+    name: Restmuell
+    details_format: "generic"
+    value_template: "{{ value.daysTo }}"
+    leadtime: 10
+    types:
+      - restmuell
+  - platform: waste_collection_schedule
+    name: Gelbersack
+    details_format: "generic"
+    value_template: "{{ value.daysTo }}"
+    leadtime: 10
+    types:
+      - gelbersack
+  - platform: waste_collection_schedule
+    name: Biomuell
+    details_format: "generic"
+    value_template: "{{ value.daysTo }}"
+    leadtime: 10
+    types:
+      - biomuell
+  - platform: waste_collection_schedule
+    name: Altpapier
+    details_format: "generic"
+    value_template: "{{ value.daysTo }}"
+    leadtime: 10
+    types:
+      - altpapier
+  - platform: waste_collection_schedule
+    name: Grünrückstände
+    details_format: "generic"
+    value_template: "{{ value.daysTo }}"
+    leadtime: 10
+    types:
+      - gruenrueckstaende
+  - platform: waste_collection_schedule
+    name: Sperrmüll
+    details_format: "generic"
+    value_template: "{{ value.daysTo }}"
+    leadtime: 10
+    types:
+      - sperrmuell
+  - platform: waste_collection_schedule
+    name: Naechster
+    details_format: "upcoming"
+    value_template: "{{ value.daysTo }}"
+    leadtime: 10
+  - platform: time_date
+    display_options:
+      - "time"
+      - "date"
+
+template:
+  - sensor:
+      - name: "Solar Energy Sum"
+        unique_id: "energy_solar_sum"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {% set A = states('sensor.shelly3em_solar_channel_a_energy') | float %}
+          {% set B = states('sensor.shelly3em_solar_channel_b_energy') | float %}
+          {% set C = states('sensor.shelly3em_solar_channel_c_energy') | float %}
+          {% set A2 = states('sensor.shelly3em_solar_channel_a_energy_returned') | float %}
+          {% set B2 = states('sensor.shelly3em_solar_channel_b_energy_returned') | float %}
+          {% set C2 = states('sensor.shelly3em_solar_channel_c_energy_returned') | float %}
+          {{ max(( A + B + C - A2 - B2 - C2), 0) | round(1, default=0) }}
+  - sensor:
+      - name: "Solar Energy Diff"
+        unique_id: "energy_solar_diff"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: total
+        state: >
+          {% set A = states('sensor.shelly3em_solar_channel_a_power') | float %}
+          {% set B = states('sensor.shelly3em_solar_channel_b_power') | float %}
+          {% set C = states('sensor.shelly3em_solar_channel_c_power') | float %}
+          {{ max( A - B , A - C, B - A, B - C, C - A, C - B) | round(1, default=0) }}
+  - sensor:
+      - name: "Solar Energy Sum Total"
+        unique_id: "solar_energy_sum_total"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {% set A = states('sensor.solar_energy_sum') | float %}
+          {% set B = states('sensor.plug_solar_energy') | float %}
+          {{ max(( A + B + 3915), 0) | round(1, default=0) }}
+      - name: "Grid Energy Sum"
+        unique_id: "grid_energy_sum"
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {% set A = states('sensor.shelly3em_grid_channel_a_energy') | float %}
+          {% set B = states('sensor.shelly3em_grid_channel_b_energy') | float %}
+          {% set C = states('sensor.shelly3em_grid_channel_c_energy') | float %}
+          {% set A2 = states('sensor.shelly3em_grid_channel_a_energy_returned') | float %}
+          {% set B2 = states('sensor.shelly3em_grid_channel_b_energy_returned') | float %}
+          {% set C2 = states('sensor.shelly3em_grid_channel_c_energy_returned') | float %}
+          {{ ( A + B + C - A2 - B2 - C2) | round(1, default=0) }}
+      - name: "Solar Power Sum"
+        unique_id: "power_solar_sum"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: total
+        state: >
+          {% set A = states('sensor.shelly3em_solar_channel_a_power') | float %}
+          {% set B = states('sensor.shelly3em_solar_channel_b_power') | float %}
+          {% set C = states('sensor.shelly3em_solar_channel_c_power') | float %}
+          {{ max(( A + B + C), 0) | round(1, default=0) }}
+      - name: "Grid Power Sum"
+        unique_id: "power_grid_sum"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: total
+        state: >
+          {% set A = states('sensor.shelly3em_grid_channel_a_power') | float %}
+          {% set B = states('sensor.shelly3em_grid_channel_b_power') | float %}
+          {% set C = states('sensor.shelly3em_grid_channel_c_power') | float %}
+          {{ ( A + B + C) | round(1, default=0) }}
+      #      - name: "Gas Energy Today"
+      #        unique_id: "gas_energy_day"
+      #        device_class: energy
+      #        unit_of_measurement: "kWh"
+      #        state: "{{ states('sensor.gas_volume_day') | float * 10 }}"
+      #        availability: "{{ is_number(states('sensor.gas_volume_day')) }}"
+      #        state_class: "total"
+      #      - name: "Gas Energy"
+      #        unique_id: "gas_energy"
+      #        device_class: energy
+      #        unit_of_measurement: "kWh"
+      #        state: "{{ states('sensor.gas_volume_day') | float * 10 }}"
+      #        availability: "{{ is_number(states('sensor.gas_volume_day')) }}"
+      #        state_class: "total_increasing"
+      - name: "Gas Energy"
+        unique_id: "gas_energy"
+        device_class: energy
+        unit_of_measurement: "kWh"
+        state: "{{ states('sensor.gaszaehler_gas_volume') | float * 10 }}"
+        availability: "{{ is_number(states('sensor.gaszaehler_gas_volume')) }}"
+        state_class: "total_increasing"
+      - name: FBHZcontrol Temperature Dynamic
+        unique_id: "fbhzcontrol_temperature_dynamic"
+        unit_of_measurement: "°C"
+        state: >-
+          {% set MEAS = states('sensor.thermostat_wohnzimmer_temperatur')|float %}
+          {% set GRAD = states('sensor.fbhzcontrol_temperature_gradient_2')|float %}
+          {{ (MEAS + GRAD) | round(2) }}
+      - name: fbhzcontrol_temperature_setpoint
+        unique_id: "fbhzcontrol_temperature_setpoint"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state: "{{ state_attr('climate.thermostat_wohnzimmer','temperature') }}"
+      - name: FBHZcontrol Temperature Deviation
+        unique_id: "fbhzcontrol_temperature_deviation"
+        unit_of_measurement: "°C"
+        state: >-
+          {% set TARGET = states('sensor.fbhzcontrol_temperature_setpoint')|float %}
+          {% set SOURCE = states('sensor.fbhzcontrol_temperature_dynamic')|float %}
+          {{ (TARGET - SOURCE) | round(2) }}
+        attributes:
+          target: "{{ states('sensor.fbhzcontrol_temperature_setpoint') }}"
+          source: "{{ states('sensor.fbhzcontrol_temperature_dynamic') }}"
+      - name: "FBHZcontrol Mode"
+        unique_id: "fbhzcontrol_mode"
+        state: >-
+          {% if states('sensor.fbhzcontrol_temperature_deviation')|float > 0.3 %}
+            turbo
+          {% elif states('sensor.fbhzcontrol_temperature_deviation')|float > 0.1  %}
+            high
+          {% elif states('sensor.fbhzcontrol_temperature_deviation')|float < -0.35 %}
+            off
+          {% elif states('sensor.fbhzcontrol_temperature_deviation')|float < -0.15 %}
+            low
+          {% else %}
+            {{ states('sensor.fbhzcontrol_mode') }}
+          {% endif %}
+        attributes:
+          deviation: "{{ states('sensor.fbhzcontrol_temperature_deviation') }}"
+      - name: "Solarthermie Power"
+        unique_id: "solarthermie_power"
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: total
+        state: >-
+          {% set vol = states('sensor.sv_s17_solar_volumenstrom') | float %}
+          {% set tempvor = states('sensor.sv_s05_solar_temp_vorlauf') | float %}
+          {% set temprueck = states('sensor.sv_s06_solar_temp_ruecklauf') | float %}
+          {{ min(15, (vol * 1.16 * (tempvor-temprueck) / 1000) |round(1)) }}
+      - name: "Sauna Power"
+        unique_id: "sauna_power"
+        device_class: power
+        unit_of_measurement: "W"
+        state: >-
+          {% set grid_power = states('sensor.grid_power_sum')|float %}
+          {% if (grid_power > 6300) %}
+            {{ grid_power }}
+          {% endif %}
+        state_class: "total_increasing"
+
+      - name: Batt Discharge Mode
+        unique_id: "batt_discharge_mode"
+        state: >-
+          {% set LIMIT_HIGH = states('sensor.batt_soc_setpoint')|float %}
+          {% set SOC = states('sensor.battbms_soc')|float %}
+          {% set HISTERESIS = states('input_number.batt_discharge_hysteresis')|float %}
+          {% if  states('input_boolean.batt_discharge_activation') == "off"  %}
+            off
+          {% elif  SOC <= (LIMIT_HIGH - HISTERESIS) %}
+            off
+          {% elif  SOC >= (LIMIT_HIGH - 1) %}
+            on
+          {% else %}
+            {{ states('sensor.batt_discharge_mode') }}
+          {% endif %}
+        attributes:
+          limit_high: "{{ LIMIT_HIGH }}"
+          soc: "{{ SOC }}"
+      - name: Luftentfeuchter Solar Mode
+        unique_id: "luftentfeuchter_solar_mode"
+        state: >-
+          {% set LIMIT_HIGH = states('sensor.batt_soc_setpoint')|float %}
+          {% set SOC = states('sensor.battbms_soc')|float %}
+          {% set HISTERESIS = states('input_number.batt_discharge_hysteresis')|float %}
+          {% if  now().hour < 9 %}
+            off
+          {% elif  SOC >= (LIMIT_HIGH + 2* HISTERESIS) %}
+            on
+          {% elif  SOC >= 99 %}
+            on
+          {% elif  SOC <= (LIMIT_HIGH + 1* HISTERESIS) %}
+            off
+          {% else %}
+            {{ states('sensor.luftentfeuchter_solar_mode') }}
+          {% endif %}
+        attributes:
+          limit_high: "{{ LIMIT_HIGH }}"
+          soc: "{{ SOC }}"
+      - name: Luftkuehlung Modus
+        unique_id: "luftkuehlung_modus"
+        state: >-
+          {% set TEMP_IN = states('sensor.heat_fluroben_temperatur')|float %}
+          {% set TEMP_OUT = states('sensor.thermometer_aussen_temperatur')|float %}
+          {% set AUTO_MODUS = states('input_boolean.lueftkuehlung_automatik') %}
+          {% if  not(AUTO_MODUS) %}
+            {{ states('sensor.luftkuehlung_modus') }}
+          {% elif  (TEMP_IN <= TEMP_OUT +1 or TEMP_IN < 22) %}
+            off
+          {% elif  (TEMP_IN >= TEMP_OUT +3 and TEMP_IN > 22) %}
+            on
+          {% else %}
+            {{ states('sensor.luftkuehlung_modus') }}
+          {% endif %}
+        attributes:
+          temp_in: "{{ TEMP_IN }}"
+          temp_out: "{{ TEMP_OUT }}"
+      - name: "Rain"
+        unit_of_measurement: "mm"
+        state: "{{ states('counter.rain_counter')|int * 0.8 }}"
+      - name: "Thermostat Partykeller Humidity Abs"
+        unique_id: thermostat_partykeller_humidity_abs
+        state: >-
+          {% set h, t = states('sensor.thermostat_partykeller_luftfeuchtigkeit') | float, states('sensor.thermostat_partykeller_temperatur') %}
+          {% if not h or t == 'unknown' -%}
+            'unknown'
+          {%- else %}
+          {% set t = t | float %}
+          {{ (h*6.112*2.1674*e**((t*17.67)/(t+243.5))/(t+273.15))|round(2) }}
+          {% endif %}
+        unit_of_measurement: "g/m³"
+      - name: "Thermometer Aussen Humidity Abs"
+        unique_id: thermometer_aussen_humidity_abs
+        state: >-
+          {% set h, t = states('sensor.thermometer_aussen_luftfeuchtigkeit') | float, states('sensor.thermometer_aussen_temperatur') %}
+          {% if not h or t == 'unknown' -%}
+            'unknown'
+          {%- else %}
+          {% set t = t | float %}
+          {{ (h*6.112*2.1674*e**((t*17.67)/(t+243.5))/(t+273.15))|round(2) }}
+          {% endif %}
+        unit_of_measurement: "g/m³"
+      - name: "Klima Keller Humidity Abs"
+        unique_id: klima_keller_humidity_abs
+        state: >-
+          {% set h, t = states('sensor.klima_keller_humidity') | float, states('sensor.klima_keller_temperature') %}
+          {% if not h or t == 'unknown' -%}
+            'unknown'
+          {%- else %}
+          {% set t = t | float %}
+          {{ (h*6.112*2.1674*e**((t*17.67)/(t+243.5))/(t+273.15))|round(2) }}
+          {% endif %}
+        unit_of_measurement: "g/m³"
+      - name: "Thermostat Wohnzimmer Humidity Abs"
+        unique_id: thermostat_wohnzimmer_humidity_abs
+        state: >-
+          {% set h, t = states('sensor.thermostat_wohnzimmer_luftfeuchtigkeit') | float, states('sensor.thermostat_wohnzimmer_temperatur') %}
+          {% if not h or t == 'unknown' -%}
+            'unknown'
+          {%- else %}
+          {% set t = t | float %}
+          {{ (h*6.112*2.1674*e**((t*17.67)/(t+243.5))/(t+273.15))|round(2) }}
+          {% endif %}
+        unit_of_measurement: "g/m³"
+      - name: "Thermostat Schlafzimmer Humidity Abs"
+        unique_id: thermostat_schlafzimmer_humidity_abs
+        state: >-
+          {% set h, t = states('sensor.thermostat_schlafzimmer_luftfeuchtigkeit') | float, states('sensor.thermostat_schlafzimmer_temperatur') %}
+          {% if not h or t == 'unknown' -%}
+            'unknown'
+          {%- else %}
+          {% set t = t | float %}
+          {{ (h*6.112*2.1674*e**((t*17.67)/(t+243.5))/(t+273.15))|round(2) }}
+          {% endif %}
+        unit_of_measurement: "g/m³"
+      - name: "Inverter Power Target"
+        unique_id: "inverter_power_target"
+        unit_of_measurement: "W"
+        device_class: power
+        state: >
+          {% set p_setpoint = states('input_number.grid_power_target') | float %}
+          {% set p_grid = states('sensor.grid_power_sum') | float %}
+          {% set p_inverter = states('number.hms_2000_4t_limit_nonpersistent_absolute') | float %}
+          {% set p_inverter_mem = states('input_number.inverter_power_target_memory') | float %}
+          {% set p_target = ((p_grid - p_setpoint) + p_inverter ) * 1 * 0.7 + p_inverter_mem * 0.3 | float %}
+          {{ min( max( p_target , 0), 2000) | round(1, default=0) }}
+
+  - trigger:
+      - trigger: time_pattern
+        seconds: 0
+    sensor:
+      - name: Batt SOC Setpoint
+        unique_id: "Batt_SOC_Setpoint"
+        unit_of_measurement: "%"
+        state: >-
+          {% set next = state_attr('sun.sun', 'next_rising') %}
+          {% set hours_till_sunrise = (next | as_datetime - now()).seconds | timestamp_custom('%H', False) |float %}
+          {% set CAPACITY = states('input_number.batt_capacity')|float %}
+          {% set PRODUCTION_REMAINING = states('sensor.energy_production_today_remaining_2')|float(0) %}
+          {% set PRODUCTION_TOMORROW = states('sensor.energy_production_tomorrow_2')|float(0) %}
+          {% set HISTERESIS = states('input_number.batt_discharge_hysteresis')|float %}
+          {% set SETPOINT = max( min( max((CAPACITY - PRODUCTION_REMAINING -1), 0), hours_till_sunrise * 0.25) / CAPACITY * 100 , 15) + HISTERESIS | float %}
+          {{ SETPOINT }}
+
+      # Sensor Daylogs
+      # deaktiviert, da über Automatisierung "Daylog_Trigger" das Script "Daylogs" aufgerufen wird
+  # - trigger:
+  #     #- platform: time
+  #     #  at: "23:59:30" # misses 2 seconds of consumption in 24 hours (which is insignificant), but ensures the calculation is done before the daily sensor is reset.
+  #     - platform: time_pattern
+  #       # Trigger once per minute during the hour of 3
+  #       hours: "23"
+  #       minutes: "59"
+  #   sensor:
+  #     - name: "Solar Energy Sum Total Daylog"
+  #       unique_id: "solar_energy_sum_total_daylog"
+  #       unit_of_measurement: "kWh"
+  #       device_class: energy
+  #       state: "{{ states('sensor.solar_energy_sum_day') |float}}"
+  #     - name: "Grid Energy Sum Daylog"
+  #       unique_id: "grid_energy_sum_daylog"
+  #       unit_of_measurement: "kWh"
+  #       device_class: energy
+  #       state: "{{ states('sensor.grid_energy_sum_day')|float}}"
+  #     - name: "Water Daylog"
+  #       unique_id: "water_daylog"
+  #       unit_of_measurement: "L"
+  #       state: "{{ states('sensor.water_today')|float}}"
+  #     - name: "Gas Energy Daylog"
+  #       unique_id: "gas_energy_daylog"
+  #       unit_of_measurement: "kWh"
+  #       device_class: energy
+  #       state: "{{ states('sensor.gas_energy_today')|float}}"
+  #     - name: "Solarthermie Energy Daylog"
+  #       unique_id: "solarthermie_energy_daylog"
+  #       unit_of_measurement: "kWh"
+  #       device_class: energy
+  #       state: "{{ states('sensor.solarthermie_energy_day')|float}}"
+  #     - name: "Electricity Energy Daylog"
+  #       unique_id: "electricity_energy_daylog"
+  #       unit_of_measurement: "kWh"
+  #       device_class: energy
+  #       state: "{{ states('sensor.electricity_energy_today')|float}}"
+
+input_number:
+  solar_energy_sum_total_daylog:
+    name: Solar Energy Sum Total Daylog
+    min: 0
+    max: 99999999
+    step: 0.01
+    unit_of_measurement: "kWh"
+  grid_energy_sum_daylog:
+    name: Grid Energy Sum Daylog
+    min: 0
+    max: 99999999
+    step: 0.01
+    unit_of_measurement: "kWh"
+  water_daylog:
+    name: Water Daylog
+    min: 0
+    max: 99999999
+    step: 0.01
+    unit_of_measurement: "L"
+  gas_energy_daylog:
+    name: Gas Energy Daylog
+    min: 0
+    max: 99999999
+    step: 0.01
+    unit_of_measurement: "kWh"
+  solarthermie_energy_daylog:
+    name: Solarthermie Energy Daylog
+    min: 0
+    max: 99999999
+    step: 0.01
+    unit_of_measurement: "kWh"
+  electricity_energy_daylog:
+    name: Electricity Energy Daylog
+    min: 0
+    max: 99999999
+    step: 0.01
+    unit_of_measurement: "kWh"
+
+waste_collection_schedule:
+  sources:
+    - name: ics
+      args:
+        file: "www/abfallkalender.ics"
+      customize:
+        - type: Restmüll in Papenteich
+          alias: restmuell
+          icon: mdi:trash-can
+        - type: Gelber Sack in Papenteich
+          alias: gelbersack
+          icon: mdi:recycle
+        - type: Biomüll in Papenteich
+          alias: biomuell
+          icon: mdi:trash-can
+        - type: Altpapier in Papenteich
+          alias: altpapier
+          icon: mdi:trash-can
+        - type: Grünrückstände in Papenteich
+          alias: gruenrueckstaende
+          icon: mdi:leaf
+        - type: Sperrmüll in Papenteich
+          alias: sperrmuell
+          icon: mdi:dump-truck
+      calendar_title: Abfallkalender
+  fetch_time: "04:00"
+  day_switch_time: "12:00"
+
+homeassistant:
+  customize:
+    sensor.naechster:
+      unit_of_measurement: Tage
+
+rest_command:
+  soyo_notaus:
+    url: "http://192.168.82.37:80/NotAus"
+  soyo_notausaus:
+    url: "http://192.168.82.37:80/NotAusAus"
+  jbl_power:
+    url: "http://192.168.82.140:80/httpapi.asp"
+    method: POST
+    payload: 'command=sendAppController&payload={"key_pressed": "power"}'
+  jbl_volume_down:
+    url: "http://192.168.82.140:80/httpapi.asp"
+    method: POST
+    payload: 'command=sendAppController&payload={"key_pressed": "volumeDown"}'
+  jbl_volume_up:
+    url: "http://192.168.82.140:80/httpapi.asp"
+    method: POST
+    payload: 'command=sendAppController&payload={"key_pressed": "volumeUp"}'
+
+# MQTT Sensors
+mqtt: !include mqtt.yaml
+modbus: !include modbus.yaml

@@ -1,0 +1,195 @@
+blueprint:
+  name: LightcontrolPresence Blueprint
+  description: Logic to set helper Lightstatus depending on helper Lightmode for presence sensors
+  domain: automation
+  author: Diggler
+  input:
+    presence_sensor_1:
+      name: Presence Sensor 1
+      selector:
+        entity:
+          domain:
+            - binary_sensor
+          device_class:
+            - presence
+    illuminance_sensor:
+      name: Illuminance Sensor
+      selector:
+        entity:
+          domain:
+            - sensor
+          device_class: illuminance
+    lightmode_helper:
+      name: Lightmode Helper (input)
+      selector:
+        entity:
+          domain:
+            - input_select
+    lightstate_helper:
+      name: Lightstate Helper (output)
+      selector:
+        entity:
+          domain:
+            - input_select
+    wait_time_low:
+      name: Wait time low
+      description: Time staying in low light mode
+      selector:
+        number:
+          mode: slider
+          min: 10
+          max: 3600
+          unit_of_measurement: seconds
+      default: 60
+    illuminance_limit_on:
+      name: Illuminance Limit
+      description: Maximum limit for auto activation
+      selector:
+        number:
+          mode: slider
+          min: 1
+          max: 2500
+          unit_of_measurement: lux
+      default: 250
+    illuminance_limit_off:
+      name: Illuminance Limit
+      description: Minimum limit for auto deactivation
+      selector:
+        number:
+          mode: slider
+          min: 1
+          max: 3000
+          unit_of_measurement: lux
+      default: 500
+
+alias: LightcontrolPresence Küche
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - !input presence_sensor_1
+    from: null
+    to: "on"
+    id: presence_on
+  - platform: state
+    entity_id:
+      - !input presence_sensor_1
+    from: null
+    to: "off"
+    id: presence_off
+  - platform: state
+    entity_id:
+      - !input lightmode_helper
+  - platform: numeric_state
+    entity_id:
+      - !input illuminance_sensor
+    above: !input illuminance_limit_off
+condition: []
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input lightmode_helper
+            state: "on"
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id:
+                - !input lightstate_helper
+            data:
+              option: "on"
+      - conditions:
+          - condition: state
+            entity_id: !input lightmode_helper
+            state: low
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id:
+                - !input lightstate_helper
+            data:
+              option: low
+      - conditions:
+          - condition: state
+            entity_id: !input lightmode_helper
+            state: "off"
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id:
+                - !input lightstate_helper
+            data:
+              option: "off"
+      - conditions:
+          - condition: state
+            entity_id: !input lightmode_helper
+            state: auto
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: numeric_state
+                    entity_id: !input illuminance_sensor
+                    above: !input illuminance_limit_off
+                sequence:
+                  - service: input_select.select_option
+                    metadata: {}
+                    data:
+                      option: "off"
+                    target:
+                      entity_id: !input lightstate_helper
+                    alias: Lightstate OFF
+                alias: Taghell
+              - conditions:
+                  - condition: state
+                    entity_id: !input presence_sensor_1
+                    state: "on"
+                  - condition: numeric_state
+                    entity_id: !input illuminance_sensor
+                    below: !input illuminance_limit_on
+                sequence:
+                  - service: input_select.select_option
+                    metadata: {}
+                    data:
+                      option: "on"
+                    target:
+                      entity_id: !input lightstate_helper
+                    alias: Lightstate ON
+                    enabled: true
+                alias: Dunkel und Anwesend
+              - conditions:
+                  - condition: trigger
+                    id:
+                      - presence_off
+                  - condition: numeric_state
+                    entity_id: !input illuminance_sensor
+                    below: !input illuminance_limit_on
+                sequence:
+                  - alias: Lightstate LOW
+                    service: input_select.select_option
+                    metadata: {}
+                    data:
+                      option: low
+                    target:
+                      entity_id: !input lightstate_helper
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: !input wait_time_low
+                      milliseconds: 0
+                  - alias: Lightstate OFF
+                    service: input_select.select_option
+                    metadata: {}
+                    data:
+                      option: "off"
+                    target:
+                      entity_id: !input lightstate_helper
+                alias: Dunkel und Abwesend
+            default:
+              - alias: Lightstate OFF
+                service: input_select.select_option
+                metadata: {}
+                data:
+                  option: "off"
+                target:
+                  entity_id: !input lightstate_helper
+mode: restart
