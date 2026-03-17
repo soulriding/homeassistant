@@ -3406,3 +3406,69 @@
         entity_id: button.hms_2000_4t_turn_inverter_on
   mode: queued
   max: 2
+- id: '1773785589795'
+  alias: Wohnzimmer Fensterlicht um 3 Uhr ausschalten
+  description: Schaltet das Wohnzimmerlicht am Fenster (wz_lowlight1) jeden Tag um
+    3:00 Uhr nachts aus
+  triggers:
+  - platform: time
+    at: 03:00:00
+  actions:
+  - target:
+      entity_id: light.wz_lowlight1
+    action: light.turn_off
+  mode: single
+- id: '1773786267733'
+  alias: Weihnachtsbeleuchtung EIN
+  description: Schaltet die Weihnachtsbeleuchtung morgens um 06:00 Uhr und bei Sonnenuntergang
+    ein
+  triggers:
+  - platform: time
+    at: 06:00:00
+  - platform: sun
+    event: sunset
+    offset: 0
+  actions:
+  - action: scene.turn_on
+    target:
+      entity_id: scene.weihnachtsbeleuchtung_an
+  mode: single
+- id: '1773786278141'
+  alias: Weihnachtsbeleuchtung AUS
+  description: Schaltet die Weihnachtsbeleuchtung morgens um 08:15 Uhr und nachts
+    um 23:30 Uhr aus
+  triggers:
+  - platform: time
+    at: 08:15:00
+  - platform: time
+    at: '23:30:00'
+  actions:
+  - action: scene.turn_on
+    target:
+      entity_id: scene.weihnachtsbeleuchtung_aus
+  mode: single
+- id: '1773786287878'
+  alias: Weihnachtsbeleuchtung Schlafzimmer
+  description: Schaltet die Schlafzimmer-Weihnachtsbeleuchtung bei Sonnenuntergang
+    ein und um 22:00 Uhr aus
+  triggers:
+  - platform: sun
+    event: sunset
+    offset: 0
+    id: ein
+  - platform: time
+    at: '22:00:00'
+    id: aus
+  actions:
+  - if:
+    - condition: trigger
+      id: ein
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.tasmota_sd117
+    else:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.tasmota_sd117
+  mode: single
