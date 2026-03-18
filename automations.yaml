@@ -3472,3 +3472,16 @@
       target:
         entity_id: switch.tasmota_sd117
   mode: single
+- id: '1773867871782'
+  alias: Timer Wohnzimmer TVdim 20:15
+  description: Setzt lightmode_livingroom täglich um 20:15 Uhr auf on_tvdim
+  triggers:
+  - platform: time
+    at: '20:15:00'
+  actions:
+  - target:
+      entity_id: input_select.lightmode_livingroom
+    data:
+      option: on_tvdim
+    action: input_select.select_option
+  mode: single

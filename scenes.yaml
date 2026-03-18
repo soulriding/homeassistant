@@ -11,7 +11,7 @@
       editable: true
       icon: mdi:lightbulb-question
       friendly_name: Lightmode Livingroom
-      state: on_tvdim
+      state: auto
     light.tasmota_led207_tasmota_led207_flurschrank:
       min_color_temp_kelvin: 2000
       max_color_temp_kelvin: 6535
@@ -36,30 +36,18 @@
       - 1.6
       rgb_color:
       - 255
-      - 254
-      - 250
+      - 255
+      - 251
       xy_color:
-      - 0.326
+      - 0.325
       - 0.333
       friendly_name: Tasmota-LED207 Tasmota-LED207_Flurschrank
       supported_features: 36
       state: 'on'
     switch.poolfeuer:
-      linkquality: 255
-      update:
-        installed_version: 16909577
-        latest_version: 16909577
-        state: idle
-      update_available: false
       friendly_name: Poolfeuer
       state: 'on'
     switch.terrassenfeuer:
-      linkquality: 172
-      update:
-        installed_version: 16909577
-        latest_version: 16909577
-        state: idle
-      update_available: false
       friendly_name: Terrassenfeuer
       state: 'on'
     light.flurunten_licht:
@@ -75,26 +63,11 @@
       effect:
       color_mode: brightness
       brightness: 128
-      level_config:
-        on_level: previous
-      linkquality: 255
-      power_on_behavior:
-      update:
-        installed_version: 587810353
-        latest_version: 587810353
-        state: idle
-      update_available: false
       friendly_name: Flurunten_Licht
       supported_features: 44
       state: 'on'
     switch.fluroben_licht:
       friendly_name: Fluroben_Licht
-      linkquality: 232
-      update:
-        installed_version: 16909577
-        latest_version: 16909577
-        state: idle
-      update_available: false
       state: 'on'
   icon: mdi:lightbulb-night
   metadata:
