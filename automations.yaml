@@ -3355,20 +3355,49 @@
 - id: '1773696516557'
   alias: Batt Discharge Controller Executer
   description: 'Zusammengeführte Steuerung: Leistungslimit (HMS) + Ein/Aus (HMS &
-    Soyo)'
+    Soyo). Watchdog: korrigiert Inverter-Status wenn er nicht mit Discharge Mode übereinstimmt.'
   triggers:
-  - trigger: state
-    entity_id: sensor.batt_discharge_mode
+  - entity_id: sensor.batt_discharge_mode
     id: mode_change
-  - trigger: state
-    entity_id: sensor.hms_2000_4t_power
+    trigger: state
+  - entity_id: sensor.hms_2000_4t_power
     id: power_update
-  - trigger: time_pattern
-    minutes: /1
+    trigger: state
+  - minutes: /15
     id: timer
+    trigger: time_pattern
+  - entity_id: binary_sensor.hms_2000_4t_producing
+    id: producing_change
+    trigger: state
   conditions: []
   actions:
   - choose:
+    - conditions:
+      - condition: state
+        entity_id: sensor.batt_discharge_mode
+        state: 'on'
+      - condition: state
+        entity_id: binary_sensor.hms_2000_4t_producing
+        state: 'off'
+      sequence:
+      - action: button.press
+        metadata: {}
+        data: {}
+        target:
+          entity_id: button.hms_2000_4t_turn_inverter_on
+    - conditions:
+      - condition: state
+        entity_id: sensor.batt_discharge_mode
+        state: 'off'
+      - condition: state
+        entity_id: binary_sensor.hms_2000_4t_producing
+        state: 'on'
+      sequence:
+      - action: button.press
+        metadata: {}
+        data: {}
+        target:
+          entity_id: button.hms_2000_4t_turn_inverter_off
     - conditions:
       - condition: state
         entity_id: sensor.batt_discharge_mode
