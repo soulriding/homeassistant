@@ -11,7 +11,7 @@
       editable: true
       icon: mdi:lightbulb-question
       friendly_name: Lightmode Livingroom
-      state: auto
+      state: 'on'
     light.tasmota_led207_tasmota_led207_flurschrank:
       min_color_temp_kelvin: 2000
       max_color_temp_kelvin: 6535

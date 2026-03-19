@@ -3514,3 +3514,42 @@
       option: on_tvdim
     action: input_select.select_option
   mode: single
+- id: '1773874959509'
+  alias: Notification Solvis Heizung offline
+  description: Sendet eine Pushover-Benachrichtigung nach 30 Min. unavailable, und
+    eine Erinnerung wenn nach 2h immer noch unavailable.
+  triggers:
+  - trigger: state
+    entity_id: sensor.sv_heizungspuffertemperatur_oben
+    to: unavailable
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+  conditions: []
+  actions:
+  - action: notify.pushover
+    data:
+      title: Solvis Verbindungsproblem
+      message: Solvis Heizung ist seit über 30 Minuten nicht erreichbar (unavailable).
+        Bitte Modbus-Verbindung zur Solvis prüfen.
+  - wait_for_trigger:
+    - trigger: state
+      entity_id: sensor.sv_heizungspuffertemperatur_oben
+      not_to: unavailable
+    timeout:
+      hours: 1
+      minutes: 30
+      seconds: 0
+    continue_on_timeout: true
+  - if:
+    - condition: state
+      entity_id: sensor.sv_heizungspuffertemperatur_oben
+      state: unavailable
+    then:
+    - action: notify.pushover
+      data:
+        title: Solvis Verbindungsproblem – Erinnerung
+        message: Solvis Heizung ist jetzt seit über 2 Stunden nicht erreichbar! Bitte
+          Modbus-Verbindung zur Solvis dringend prüfen.
+  mode: single
